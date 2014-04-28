@@ -6,7 +6,6 @@
  */
 
 use Phalcon\Queue\Beanstalk;
-use Phalcon\Queue\Beanstalk\Job;
 
 class FeedTask extends \Phalcon\CLI\Task {
 
@@ -84,7 +83,7 @@ class FeedTask extends \Phalcon\CLI\Task {
             $newMessage = msgpack_unpack($message);
             $num = $model->executeInsert(\HSocket\Model::INSERT, $newMessage);
             if($num > 0) {
-                $num = $redis->zadd(sprintf($redis_queue_allfeed_byapp, $newMessage['app_id']), -$newMessage['create_at'], $oldMessage);
+                $redis->zadd(sprintf($redis_queue_allfeed_byapp, $newMessage['app_id']), -$newMessage['create_at'], $oldMessage);
                 $job->delete();
             }
         }
