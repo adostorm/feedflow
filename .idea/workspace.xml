@@ -58,75 +58,7 @@
     <favorites_list name="Project_Feed" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
-      <file leaf-file-name="FeedTask.php" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/tasks/FeedTask.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="15" column="32" selection-start="395" selection-end="395" vertical-scroll-proportion="-7.806452">
-              <folding>
-                <element signature="e#67#95#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="config.php" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config/config.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="23" selection-start="369" selection-end="383" vertical-scroll-proportion="-9.225806">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="services.php" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config/services.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="37" column="49" selection-start="900" selection-end="900" vertical-scroll-proportion="-13.129032">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="redis.php" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config/redis.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="10" column="30" selection-start="152" selection-end="152" vertical-scroll-proportion="-7.096774">
-              <folding>
-                <element signature="e#6#65#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="loader.php" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config/loader.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="0" selection-start="208" selection-end="208" vertical-scroll-proportion="-9.225806">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="FeedController.php" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/controllers/FeedController.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="9" column="39" selection-start="135" selection-end="135" vertical-scroll-proportion="0.16616315">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="app.php" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app.php">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="45" column="60" selection-start="994" selection-end="1008" vertical-scroll-proportion="-14.83871">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <leaf />
   </component>
   <component name="FindManager">
     <FindUsagesManager>
@@ -192,6 +124,7 @@
       <sortByType />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -210,37 +143,8 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Project_Feed" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Project_Feed" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="vendor" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Project_Feed" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Project_Feed" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="config" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -292,7 +196,7 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17146975" sideWeight="0.6712707" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17435159" sideWeight="0.6712707" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32872927" sideWeight="0.5" order="9" side_tool="true" content_ui="tabs" />
@@ -368,48 +272,41 @@
     <breakpoint-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/vendor/handlersocket/Model.php">
+    <entry file="file://$PROJECT_DIR$/app.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="43" column="0" selection-start="992" selection-end="992" vertical-scroll-proportion="1.0">
+        <state line="45" column="60" selection-start="994" selection-end="1008" vertical-scroll-proportion="0.0">
           <folding />
         </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/vendor/handlersocket/Model.php">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="43" column="0" selection-start="992" selection-end="992" vertical-scroll-proportion="1.0" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/vendor/handlersocket/ModelProxy.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="24" selection-start="925" selection-end="925" vertical-scroll-proportion="0.6646526">
-          <folding />
-        </state>
+        <state line="36" column="24" selection-start="925" selection-end="925" vertical-scroll-proportion="0.6646526" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../Phalcon/Queue/Beanstalk.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="38" selection-start="156" selection-end="156" vertical-scroll-proportion="-3.903226">
-          <folding />
-        </state>
+        <state line="8" column="38" selection-start="156" selection-end="156" vertical-scroll-proportion="-3.903226" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/cli.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="25" selection-start="677" selection-end="677" vertical-scroll-proportion="-6.387097">
-          <folding />
-        </state>
+        <state line="29" column="25" selection-start="677" selection-end="677" vertical-scroll-proportion="-6.387097" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config/setting.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="0" selection-start="102" selection-end="102" vertical-scroll-proportion="0.13293052">
-          <folding />
-        </state>
+        <state line="8" column="0" selection-start="102" selection-end="102" vertical-scroll-proportion="0.13293052" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config/cachekeys.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="33" selection-start="101" selection-end="101" vertical-scroll-proportion="0.27672955">
-          <folding>
-            <element signature="e#6#65#0" expanded="true" />
-          </folding>
-        </state>
+        <state line="8" column="33" selection-start="101" selection-end="101" vertical-scroll-proportion="0.27672955" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/vendor/redis/Client.php">
@@ -421,60 +318,54 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/config/db.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="10" column="0" selection-start="108" selection-end="108" vertical-scroll-proportion="0.09969789">
-          <folding />
-        </state>
+        <state line="10" column="0" selection-start="108" selection-end="108" vertical-scroll-proportion="0.09969789" />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/tasks/FeedTask.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="32" selection-start="395" selection-end="395" vertical-scroll-proportion="-7.806452">
-          <folding>
-            <element signature="e#67#95#0" expanded="true" />
-          </folding>
+        <state line="15" column="32" selection-start="395" selection-end="395" vertical-scroll-proportion="0.0">
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="45" column="60" selection-start="994" selection-end="1008" vertical-scroll-proportion="-14.83871">
+        <state line="45" column="60" selection-start="994" selection-end="1008" vertical-scroll-proportion="0.6676737">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config/config.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="23" selection-start="369" selection-end="383" vertical-scroll-proportion="-9.225806">
+        <state line="13" column="23" selection-start="369" selection-end="383" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config/services.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="37" column="49" selection-start="900" selection-end="900" vertical-scroll-proportion="-13.129032">
+        <state line="37" column="49" selection-start="900" selection-end="900" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config/redis.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="10" column="30" selection-start="152" selection-end="152" vertical-scroll-proportion="-7.096774">
-          <folding>
-            <element signature="e#6#65#0" expanded="true" />
-          </folding>
+        <state line="10" column="30" selection-start="152" selection-end="152" vertical-scroll-proportion="0.0">
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config/loader.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="0" selection-start="208" selection-end="208" vertical-scroll-proportion="-9.225806">
+        <state line="13" column="0" selection-start="208" selection-end="208" vertical-scroll-proportion="0.0">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/controllers/FeedController.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="9" column="39" selection-start="135" selection-end="135" vertical-scroll-proportion="0.16616315">
+        <state line="21" column="50" selection-start="417" selection-end="417" vertical-scroll-proportion="0.5649547">
           <folding />
         </state>
       </provider>
