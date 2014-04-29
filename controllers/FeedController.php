@@ -5,35 +5,42 @@
  * Time: 下午5:46
  */
 
-use Redisc\Client as Redis;
+use Redisc\Client as RedisClient;
 
 class FeedController extends CController {
 
     public function getFeedByAppId() {
-
         $pageDefault = 1;
         $countDefault = 10;
 
-        $app_id = $this->request->get('app_id');
-        $page = $this->request->get('page', 'intval', $pageDefault);
-        $count = $this->request->get('count', 'intval', $countDefault);
+        $app_id = $this->request->get('app_id', 'int', 0);
+        $page = $this->request->get('page', 'int', $pageDefault);
+        $count = $this->request->get('count', 'int', $countDefault);
 
         $page = $page > 0 ? $page : $pageDefault;
         $count = $count > 0 && $count <= 50 ? $count : $countDefault;
 
         $limit = ($page - 1) * $count;
-        $offset = $count * $page;
+        $offset = $count * $page - 1;
 
         $config = $this->getDI()->get('config');
         $redisConfig = \Util\ReadConfig::get('redis.link_master0', $config);
-        $cache_key_appfeed = \Util\ReadConfig::get('appfeed', $config);
+        $cache_key_appfeed = \Util\ReadConfig::get('cachekeys_redis.appfeeds', $config);
 
-        $redis = new Redis(\Util\ReadConfig::get('host', $redisConfig),
+        $client = new RedisClient(\Util\ReadConfig::get('host', $redisConfig),
             \Util\ReadConfig::get('port', $redisConfig));
 
-        $results = $redis->zrange(sprint($cache_key_appfeed, $app_id), $limit, $offset);
+        $results = $client->zrange(sprintf($cache_key_appfeed, $app_id), $limit, $offset);
 
-        var_dump($results);
+        $feedList = array();
+        if($results) {
+            foreach($results as $result) {
+                $feedList[] = msgpack_unpack($result);
+            }
+            unset($results);
+        }
+
+        var_dump($feedList);
     }
 
     public function getFeedByUid() {

@@ -31,7 +31,7 @@ return new \Phalcon\Config(array(
             ),
         ),
 
-        'link_userstate' => array(
+        'link_user_relation' => array(
             'master' => array(
                 'adapter' => 'Mysql',
                 'host' => 'localhost',
@@ -41,14 +41,6 @@ return new \Phalcon\Config(array(
                 'hs_read_port' => 9998,
                 'hs_write_port' => 9999,
             ),
-//            'slave0' => array(
-//                'adapter' => 'Mysql',
-//                'host' => 'localhost',
-//                'username' => 'root',
-//                'password' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
-//                'dbname' => 'test',
-//                'hs_read_port' => 9998,
-//            ),
         ),
 
         'feed_relation' => array(

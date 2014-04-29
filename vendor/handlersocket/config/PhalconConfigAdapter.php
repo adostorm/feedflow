@@ -88,7 +88,7 @@ class PhalconConfigAdapter implements IConfig
     {
         static $configs = null;
 
-        if (null == $configs) {
+//        if (null == $configs) {
             $_prefix = $this->prefix;
 
             if(!isset($this->diConfig->{$_prefix})) {
@@ -117,7 +117,7 @@ class PhalconConfigAdapter implements IConfig
                 $this->masterLinks = $masterLinks;
                 $this->slaveLinks = $slaveLinks;
             }
-        }
+//        }
 
         return $configs;
     }

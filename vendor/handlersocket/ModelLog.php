@@ -16,13 +16,13 @@ class ModelLog extends File {
 
     private $name = '';
 
-    private $option = null;
+    private $options = null;
 
     private $diConfig = null;
 
-    public function __construct($diConfig, $name='', $option=null) {
+    public function __construct($diConfig, $name='', $options=null) {
         $this->name = $name;
-        $this->option = $option;
+        $this->options = $options;
         $this->diConfig = $diConfig;
 
         $this->_init();

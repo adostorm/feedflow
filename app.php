@@ -30,6 +30,31 @@ $app->get('/timeline/public', array($feedController, 'getFeedByAppId'));
  */
 $app->get('/timeline/friends', array($feedController, 'getFeedByUid'));
 
+$userController = new UserController();
+/**
+ *
+ */
+$app->post('/friendships/create', function () use ($app) {
+    $app_id = $app->request->getPost('app_id');
+    $repush = $app->request->getPost('repush');
+    $uid = $app->request->getPost('uid');
+    $friend_uid = $app->request->getPost('friend_uid');
+
+    $user = new UserModel();
+    $status = $user->checkRelation($uid, $friend_uid);
+
+    $result = $user->createRelation($uid, $friend_uid, $status);
+
+    var_dump($status, $result);
+
+    //内部推送动态
+    if($app_id&&($status==-99 || $repush)) {
+        $feed = new FeedController();
+        $feed->create();
+    }
+
+});
+
 
 ///////Test
 $app->get('/test/1', function () use ($app) {
@@ -40,6 +65,17 @@ $app->get('/test/1', function () use ($app) {
 $app->get('/test/2', function () use ($app) {
     $conf = \Util\ReadConfig::get('application', $app->getDI()->get('config'));
     echo \Util\ReadConfig::get('path', $conf);
+});
+
+$app->get('/test/3',function () use ($app) {
+//    $proxy = new \HSocket\ModelProxy($app->getDI()->get('name'));
+//    $model =$proxy->getHandlerSocketModel(\HSocket\Config\IConfig::WRITE_PORT);
+//
+//    $index = $model->createIndex(\HSocket\Model::SELECT, 'fans', '', array('uid', 'friend_uid', 'status'), array('friend_uid'));
+//    $index->find(array('='=>''));
+
+//    $ref =
+
 });
 
 

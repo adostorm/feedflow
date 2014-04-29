@@ -26,6 +26,11 @@ class Client
         $this->_init();
     }
 
+    /**
+     * 1. check Redis plugin
+     * 2. instance redis handler
+     * 3. throw exception
+     */
     private function _init() {
         if(false == $this->isConnected) {
             try {
