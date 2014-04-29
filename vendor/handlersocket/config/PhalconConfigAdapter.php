@@ -9,6 +9,7 @@ namespace HSocket\Config;
 
 use HSocket\Config\IConfig;
 use HSocket\ModelException;
+use HSocket\ModelLog;
 
 class PhalconConfigAdapter implements IConfig
 {
@@ -18,6 +19,8 @@ class PhalconConfigAdapter implements IConfig
 
     private $masterLinks = array();
     private $slaveLinks = array();
+
+    private $log = null;
 
     /**
      * @return array
@@ -47,6 +50,7 @@ class PhalconConfigAdapter implements IConfig
     {
         $this->prefix = $prefix;
         $this->diConfig = $diConfig;
+        $this->log = new ModelLog($diConfig);
     }
 
     public function buildConfig($link, $port = self::WRITE_PORT, $assign='')
@@ -56,8 +60,7 @@ class PhalconConfigAdapter implements IConfig
         if(!empty($assign)) {
             $index = $assign;
             if($port == self::WRITE_PORT && false !== stripos($index, 'slave')) {
-                throw new ModelException(sprintf('db link "%s" can not be writed port', $index));
-                exit(1);
+                $this->log->error(sprintf('db link "%s" can not be writed port', $index));
             }
         } else if ($port == self::WRITE_PORT || empty($this->slaveLinks)) {
             $index = $this->masterLinks[array_rand($this->masterLinks)];
@@ -66,8 +69,7 @@ class PhalconConfigAdapter implements IConfig
         }
 
         if(!isset($configs[$index])) {
-            throw new ModelException(sprintf('no db link : %S', $index));
-            exit(1);
+            $this->log->error(sprintf('no db link : %S', $index));
         }
 
         $config = $configs[$index];
@@ -90,9 +92,10 @@ class PhalconConfigAdapter implements IConfig
             $_prefix = $this->prefix;
 
             if(!isset($this->diConfig->{$_prefix})) {
+                $this->log->error(sprintf('no db key : %s ... happen at %s',$_prefix.PHP_EOL, __METHOD__.PHP_EOL.__LINE__));
                 throw new ModelException(sprintf('no db key : %s ... happen at %s',$_prefix.PHP_EOL, __METHOD__.PHP_EOL.__LINE__));
             } else if(!isset($this->diConfig->{$_prefix}->{$link})) {
-                throw new ModelException(sprintf('no db link : %s ... happen at %s', $link.PHP_EOL, __METHOD__.PHP_EOL.__LINE__));
+                $this->log->error(sprintf('no db link : %s ... happen at %s', $link.PHP_EOL, __METHOD__.PHP_EOL.__LINE__));
             }
 
             $configs = $this->diConfig->{$_prefix}->{$link};
@@ -108,8 +111,7 @@ class PhalconConfigAdapter implements IConfig
                 }
 
                 if(empty($masterLinks)) {
-                    throw new ModelException('no db master');
-                    exit(1);
+                    $this->log->error('no db master');
                 }
 
                 $this->masterLinks = $masterLinks;
