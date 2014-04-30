@@ -55,26 +55,76 @@ $app->post('/friendships/create', function () use ($app) {
 
 });
 
+$app->get('/friendships/followers', function () use ($app) {
+    $pageDefault = 1;
+    $countDefault = 10;
+
+    $uid = $app->request->get('uid');
+    $page = $app->request->get('page', 'int', $pageDefault);
+    $count = $app->request->get('count', 'int', $countDefault);
+
+    $page = $page > 0 ? $page : $pageDefault;
+    $count = $count > 0 && $count <= 50 ? $count : $countDefault;
+
+    $offset = ($page - 1) * $count;
+
+    $user = new UserModel();
+    $result = $user->getFansList($uid, $count, $offset);
+
+    var_dump($result);
+});
+
+$app->get('/friendships/friends', function () use ($app) {
+    $pageDefault = 1;
+    $countDefault = 10;
+
+    $uid = $app->request->get('uid');
+    $page = $app->request->get('page', 'int', $pageDefault);
+    $count = $app->request->get('count', 'int', $countDefault);
+
+    $page = $page > 0 ? $page : $pageDefault;
+    $count = $count > 0 && $count <= 50 ? $count : $countDefault;
+
+    $offset = ($page - 1) * $count;
+
+    $user = new UserModel();
+    $result = $user->getFollowList($uid, $count, $offset);
+
+    var_dump($result);
+});
+
+$app->post('/friendships/destroy', function () use ($app) {
+    $uid = $app->request->getPost('uid');
+    $friend_uid = $app->request->getPost('friend_uid');
+
+    $user = new UserModel();
+    $result = $user->removeRelation($uid, $friend_uid);
+
+    var_dump($result);
+});
+
 
 ///////Test
-$app->get('/test/1', function () use ($app) {
-    $log = new \HSocket\ModelLog($app->getDI()->get('config'));
-    $log->error('vvv');
-});
+$app->get('/test/1',function () use ($app) {
+    try {
+        $hs = new \HandlerSocket('localhost', 9999);
+        $hs->auth('5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1');
 
-$app->get('/test/2', function () use ($app) {
-    $conf = \Util\ReadConfig::get('application', $app->getDI()->get('config'));
-    echo \Util\ReadConfig::get('path', $conf);
-});
+        $uid = "1";
+        $friend_uid = "2";
 
-$app->get('/test/3',function () use ($app) {
-//    $proxy = new \HSocket\ModelProxy($app->getDI()->get('name'));
-//    $model =$proxy->getHandlerSocketModel(\HSocket\Config\IConfig::WRITE_PORT);
-//
-//    $index = $model->createIndex(\HSocket\Model::SELECT, 'fans', '', array('uid', 'friend_uid', 'status'), array('friend_uid'));
-//    $index->find(array('='=>''));
+        $hs->openIndex(\HSocket\Model::SELECT, 'userstate', 'user_relation', 'idx0',
+            array('uid','friend_uid','status','create_at'),array('status'));
 
-//    $ref =
+        $result = $hs->executeSingle(\HSocket\Model::SELECT, '=', array($uid), 10, 0, null, null, array('F', '>', 0, 0));
+
+        var_dump($result);
+
+    } catch(\HandlerSocketException $e) {
+        echo $e->getMessage();
+    } catch(\Phalcon\Exception $e) {
+        echo $e->getMessage();
+    }
 
 });
 

@@ -30,7 +30,7 @@ class Model
         $this->config = $config;
     }
 
-    public function openIndex($commandId, $table, $primary='', $field=array()) {
+    public function openIndex($commandId, $table, $primary='', $field=array(), $filter=array()) {
         try {
             $handler = new \HandlerSocket($this->config['host'], $this->config['port']);
             $isLogin = $handler->auth($this->config['password']);
@@ -39,7 +39,10 @@ class Model
                 exit(1);
             }
             $this->commandId = $commandId;
-            $handler->openIndex($commandId, $this->config['dbname'], $table, $primary, $field);
+            if(empty($filter)) {
+                $filter = null;
+            }
+            $handler->openIndex($commandId, $this->config['dbname'], $table, $primary, $field, $filter);
             return $this->handler = $handler;
         } catch (\HandlerSocketException $e) {
             echo $e->getMessage();
@@ -55,7 +58,7 @@ class Model
                 exit(1);
             }
             $this->commandId = $commandId;
-            $filter = empty($filter) ? $filter : array('filter'=>$filter);
+            $filter = empty($filter) ? null : array('filter'=>$filter);
             $index = $handler->createIndex($commandId, $this->config['dbname'], $table, $primary, $field,$filter);
             return $this->index = $index;
         } catch (\HandlerSocketException $e) {
@@ -63,34 +66,4 @@ class Model
         }
     }
 
-    /**
-     * @param $keys
-     * @param string $op
-     * @return mixed
-     *
-     *  array(1, '>=', array('K1')),
-        array(1, '>=', array('K1'), 3),
-        array(1, '>=', array('K1'), 1, 0, null, null, array('F', '>', 0, 'F1')),
-        array(1, '=', array('K1'), 1, 0, 'U', array('KEY1', 'VAL1'))
-     */
-    public function find($keys, $op='=') {
-        if(is_array($keys)) {
-            $query = array();
-            foreach($keys as $key) {
-                $query[] = array($this->commandId, $op, array($key));
-            }
-            return $this->handler->executeMulti($query);
-        } else {
-            return $this->handler->executeSingle($this->commandId, $op, array($keys));
-        }
-    }
-
-    public function findByFilter() {
-
-    }
-
-    public function __call($name, $arguments)
-    {
-        return call_user_func_array(array($this->handler, $name), $arguments);
-    }
 }
