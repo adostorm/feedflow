@@ -1,4 +1,5 @@
 <?php
+
 use Phalcon\DI\FactoryDefault\CLI as CliDI,
     Phalcon\CLI\Console as ConsoleApp;
 
@@ -20,15 +21,14 @@ $loader = new \Phalcon\Loader();
 
 $loader->registerDirs(
     array(
-        APPLICATION_PATH . '/vendor',
         APPLICATION_PATH . '/tasks',
         APPLICATION_PATH . '/models',
     )
 );
 
 $loader->registerNamespaces(array(
-    'HSocket'=>APPLICATION_PATH . '/vendor/handlersocket/',
-    'Redisc'=>APPLICATION_PATH . '/vendor/redis/',
+    'HsMysql'=>APPLICATION_PATH . '/vendor/hsmysql/',
+    'Util'=>APPLICATION_PATH . '/library/',
 ));
 
 $loader->register();

@@ -5,32 +5,24 @@
  * Time: 下午5:46
  */
 
-use Redisc\Client as RedisClient;
-
 class FeedController extends CController {
 
-    public function getFeedByAppId() {
-        $pageDefault = 1;
-        $countDefault = 10;
+    public function getFeedListByAppId() {
 
-        $app_id = $this->request->get('app_id', 'int', 0);
-        $page = $this->request->get('page', 'int', $pageDefault);
-        $count = $this->request->get('count', 'int', $countDefault);
+        $app_id = $this->request->get('app_id', 'int');
+        $page = $this->request->get('page', 'int');
+        $count = $this->request->get('count', 'int');
 
-        $page = $page > 0 ? $page : $pageDefault;
-        $count = $count > 0 && $count <= 50 ? $count : $countDefault;
+        $page = $page > 0 ? $page : 1;
+        $count = $count > 0 && $count <= 50 ? $count : 15;
 
         $limit = ($page - 1) * $count;
         $offset = $count * $page - 1;
 
-        $config = $this->getDI()->get('config');
-        $redisConfig = \Util\ReadConfig::get('redis.link_master0', $config);
-        $cache_key_appfeed = \Util\ReadConfig::get('cachekeys_redis.appfeeds', $config);
-
-        $client = new RedisClient(\Util\ReadConfig::get('host', $redisConfig),
-            \Util\ReadConfig::get('port', $redisConfig));
-
-        $results = $client->zrange(sprintf($cache_key_appfeed, $app_id), $limit, $offset);
+        $di = $this->getDI();
+        $redis = \Util\RedisClient::getInstance($di);
+        $zaddKey = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
+        $results = $redis->zrange(sprintf($zaddKey, $app_id), $limit, $offset);
 
         $feedList = array();
         if($results) {
@@ -43,7 +35,7 @@ class FeedController extends CController {
         var_dump($feedList);
     }
 
-    public function getFeedByUid() {
+    public function getFeedListByUid() {
 
     }
 
@@ -51,17 +43,15 @@ class FeedController extends CController {
         $mode = $this->request->getPost('mode');
         $msg = $this->request->getPost('msg');
 
-        $queue = new \Phalcon\Queue\Beanstalk(array(
-            'host'=>'127.0.0.1',
-            'port'=>11307
-        ));
-        $queue->connect();
-        $queue->choose('bean:queue:feed');
+        $queue = \Util\BStalkClient::getInstance($this->getDI());
+        $queue->choose(\Util\ReadConfig::get('queue_keys.allfeeds', $this->getDI()));
 
         if($mode=='multi') {
             $msgArray = msgpack_unpack($msg);
-            foreach($msgArray as $row) {
-                $queue->put(msgpack_pack($row));
+            if(is_array($msgArray)) {
+                foreach($msgArray as $row) {
+                    $queue->put(msgpack_pack($row));
+                }
             }
         } else {
             $queue->put($msg);

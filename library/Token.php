@@ -8,7 +8,7 @@
 namespace Util;
 
 
-class Token {
+final class Token {
 
     private function __construct() {}
     private function __clone() {}
