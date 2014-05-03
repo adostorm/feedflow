@@ -26,20 +26,29 @@ $config = new \Phalcon\Config(array(
             'port' => 11307,
         ),
     ),
-    'setting' => array(),
+    'setting' => array(
+        'cache_timeout_alg1'=>2592000, // a month
+        'big_v_level'=>300,
+    ),
     'link_userstate' => array(
         'host' => '127.0.0.1',
-        'password' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'username'=>'root',
+        'password' => '123456',
+        'dbname' => 'userstate',
+
+        'hs_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
-        'dbname' => 'userstate',
     ),
     'link_feed' => array(
         'host' => '127.0.0.1',
-        'password' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'username'=>'root',
+        'password' => '123456',
+        'dbname' => 'feed',
+
+        'hs_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
-        'dbname' => 'feed',
     ),
 
     'redis_connect' => array(
@@ -51,6 +60,10 @@ $config = new \Phalcon\Config(array(
     'redis_cache_keys' => array(
         'app_id_feeds' => 'cache:app:%d:feeds',
         'user_id_feeds' => 'cache:user:%d:feeds',
+        'user_id_counts' => 'cache:user:%d:counts',
+        'feed_id_content'=>'cache:feed:%d:content',
+        'follow_uid_list'=>'cache:follow:%d:list',
+        'fans_uid_list'=>'cache:fans:%d:list',
     ),
 
     'queue_connect' => array(

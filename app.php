@@ -28,7 +28,11 @@ $app->get('/friendships/followers', array($userController, 'getFansList'));
 $app->get('/friendships/friends', array($userController, 'getFollowList'));
 
 
-
+$app->get('/test/user/1', function () use ($app) {
+    $user = new UserRelationModel($app->getDI());
+    $results = $user->getFollowList(1, 0, 100);
+    echo json_encode($results);
+});
 
 
 

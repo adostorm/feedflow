@@ -13,7 +13,6 @@ $loader->registerDirs(
 );
 
 $loader->registerNamespaces(array(
-    'Redisc'=>$config->application->vendorDir.'redis/',
     'Util'=>$config->application->libraryDir,
     'HsMysql'=>$config->application->vendorDir.'hsmysql/',
 ));

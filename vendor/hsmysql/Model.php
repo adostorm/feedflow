@@ -24,7 +24,7 @@ class Model
 
     const DELETE = 4;
 
-    public $index = '';
+    public $index = null;
 
     public $tbname = '';
 
@@ -49,6 +49,14 @@ class Model
     private $isAssociate = true;
 
     public $insertId = 0;
+
+    /**
+     * @return null
+     */
+    public function getDi()
+    {
+        return $this->di;
+    }
 
     /**
      * @param boolean $isAssociate
@@ -180,6 +188,30 @@ class Model
         return $result;
     }
 
+    public function increment($key, $data) {
+        return $this->_countuPdate($key, $data, '+');
+    }
+
+    public function decrement($key, $data) {
+        return $this->_countuPdate($key, $data, '-');
+    }
+
+    private function _countuPdate($key, $data, $mode='+', $op='=') {
+        $this->_parseFilter();
+        $_fields = array();
+        $_values = array();
+        foreach ($data as $_field => $_value) {
+            $_fields[] = $_field;
+            $_values[] = $_value;
+        }
+        $this->field($_fields);
+        $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
+        $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $_fields, $this->indexFilter);
+        $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $_values, $this->whereFilter);
+        $result = $this->_parseData($result);
+        return $result;
+    }
+
     public function multi()
     {
 
@@ -202,6 +234,7 @@ class Model
         if ($this->limit == 1 && isset($newData[0])) {
             $newData = $newData[0];
         }
+
         return $newData;
     }
 
@@ -232,6 +265,8 @@ class Model
                 $_pairs[] = trim($_unit);
             }
             unset($_units);
+        } else {
+            return $string;
         }
         return $_pairs;
     }

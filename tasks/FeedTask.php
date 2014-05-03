@@ -29,6 +29,9 @@ class FeedTask extends \Phalcon\CLI\Task {
             $num = $model->create($newMessage);
             if($num > 0) {
                 $redis->zadd(sprintf($zaddKey, $newMessage['app_id']), -$newMessage['create_at'], $oldMessage);
+
+
+
                 $job->delete();
             }
         }

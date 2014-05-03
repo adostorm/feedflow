@@ -27,8 +27,9 @@ $loader->registerDirs(
 );
 
 $loader->registerNamespaces(array(
-    'HsMysql'=>APPLICATION_PATH . '/vendor/hsmysql/',
     'Util'=>APPLICATION_PATH . '/library/',
+    'HsMysql'=>APPLICATION_PATH . '/vendor/hsmysql/',
+    'HSPHP'=>APPLICATION_PATH . '/vendor/HSPHP/',
 ));
 
 $loader->register();

@@ -9,7 +9,7 @@ namespace Util;
 
 use Phalcon\Queue\Beanstalk;
 
-class BStalkClient {
+final class BStalkClient {
 
     private $host = '';
 

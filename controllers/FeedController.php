@@ -24,6 +24,11 @@ class FeedController extends CController {
         $zaddKey = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
         $results = $redis->zrange(sprintf($zaddKey, $app_id), $limit, $offset);
 
+        if(!$results) {
+            $model = new FeedModel($di);
+//            $model->find();
+        }
+
         $feedList = array();
         if($results) {
             foreach($results as $result) {
