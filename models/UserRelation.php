@@ -118,7 +118,7 @@ class UserRelation extends \Phalcon\Mvc\Model
         $redis = \Util\RedisClient::getInstance($this->getDi());
         $results = $redis->zrange($key, $limit, $offset);
 
-        if(false === $results) {
+        if(!$results) {
             $models = UserRelation::find(array(
                 "uid=:uid: and status in (0, 1)",
                 'order'=>'create_at desc',
@@ -131,19 +131,13 @@ class UserRelation extends \Phalcon\Mvc\Model
                 ),
             ));
 
+            $results = array();
             if($models->getFirst()) {
                 foreach($models as $model) {
-                    $this->redis->zadd($key, -$model->getCreateAt(), msgpack_pack($model->toArray()));
+                    $this->redis->zadd($key, -$model->getCreateAt(), $model->friend_uid);
+                    $results[] = $model->friend_uid;
                 }
-                $results = $models->toArray();
             }
-        } else {
-            $tempResults = array();
-            foreach($results as $result) {
-                $tempResults[] = msgpack_unpack($result);
-            }
-            $results = $tempResults;
-            unset($tempResults);
         }
 
         return $results;
@@ -169,19 +163,13 @@ class UserRelation extends \Phalcon\Mvc\Model
                 ),
             ));
 
+            $results = array();
             if($models->getFirst()) {
                 foreach($models as $model) {
-                    $this->redis->zadd($key, -$model->getCreateAt(), msgpack_pack($model->toArray()));
+                    $this->redis->zadd($key, -$model->getCreateAt(), $model->friend_uid);
+                    $results[] = $model->friend_uid;
                 }
-                $results = $models->toArray();
             }
-        } else {
-            $tempResults = array();
-            foreach($results as $result) {
-                $tempResults[] = msgpack_unpack($result);
-            }
-            $results = $tempResults;
-            unset($tempResults);
         }
 
         return $results;

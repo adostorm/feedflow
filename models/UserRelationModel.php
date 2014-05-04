@@ -93,6 +93,16 @@ class UserRelationModel extends \HsMysql\Model
             $countModel = new UserCountModel($this->getDi());
             $countModel->updateCount($uid, 'follow_count', 1);
             $countModel->updateCount($friend_uid, 'fans_count', 1);
+
+            $result = $this->field('create_at')->filter(array(
+                array('friend_uid', '=', $friend_uid)
+            ))->find($uid);
+            $this->redis->zadd(sprintf($this->cache_follow_key, $uid), -$result['create_at'], $friend_uid);
+
+            $result = $this->field('create_at')->filter(array(
+                array('friend_uid', '=', $uid)
+            ))->find($friend_uid);
+            $this->redis->zadd(sprintf($this->cache_fans_key, $friend_uid), -$result['create_at'], $uid);
         }
 
         return $status;
@@ -138,6 +148,9 @@ class UserRelationModel extends \HsMysql\Model
             $countModel = new UserCountModel($this->getDi());
             $countModel->updateCount($uid, 'follow_count', 1, false);
             $countModel->updateCount($friend_uid, 'fans_count', 1, false);
+
+            $this->redis->zrem(sprintf($this->cache_follow_key, $uid), $friend_uid);
+            $this->redis->zadd(sprintf($this->cache_fans_key, $friend_uid), $uid);
         }
 
         return $status;
@@ -159,11 +172,33 @@ class UserRelationModel extends \HsMysql\Model
 
     public function getFansList($uid, $offset=0, $limit=15) {
 
+        $redisOffset = $offset;
+        $redisLimit = $offset + $limit - 1;
 
+        $key = sprintf($this->cache_fans_key, $uid);
+        $redisResults = $this->redis->zrange($key, $redisOffset, $redisLimit);
 
-        $results = $this->field('uid,friend_uid,status')->filter(array(
-            array('status', '>', 0),
-        ))->limit($offset, $limit)->find($uid);
+        $results = array();
+        if(!$redisResults) {
+
+            $tableResults = $this->field('uid,friend_uid,status')->filter(array(
+                array('status', '>', 0),
+            ))->limit($offset, $limit)->find($uid);
+
+            if($tableResults) {
+                $this->redis->pipeline();
+                foreach($tableResults as $_tb_result) {
+                    $this->redis->zadd($key, -$_tb_result['create_at'], $_tb_result['friend_uid']);
+                    $results[] = $_tb_result['friend_uid'];
+                }
+                $this->redis->exec();
+            }
+            unset($tableResults);
+        } else {
+            $results = $redisResults;
+        }
+        unset($redisResults);
+
         return $results;
     }
 

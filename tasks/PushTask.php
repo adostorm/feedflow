@@ -12,8 +12,8 @@ class PushTask extends \Phalcon\CLI\Task {
     }
 
     private function _processQueue() {
-        $key = \Util\ReadConfig::get('queue_keys.pushfeeds', $this->getDi());
-        $queue = \Util\BStalkClient::getInstance($this->getDi());
+        $key = \Util\ReadConfig::get('queue_keys.pushfeeds', $this->getDI());
+        $queue = \Util\BStalkClient::getInstance($this->getDI());
         $queue->choose($key);
         $queue->watch($key);
 
@@ -35,9 +35,9 @@ class PushTask extends \Phalcon\CLI\Task {
 
             $page = 1;
             $offset = 0;
-            $count = 100;
+            $count = 101;
             while($results = $userModel->getFansList($uid, $offset, $count)) {
-                $offset = ($page - 1) * $count + 1;
+                $offset = ($page - 1) * $count - 1;
                 foreach($results as $result) {
                     $feedModel->create(array(
                         'uid'=>$result['friend_id'],
@@ -45,7 +45,7 @@ class PushTask extends \Phalcon\CLI\Task {
                         'feed_id'=>$feed_id,
                     ));
                 }
-                if(count($results) < 101) {
+                if(count($results) <= $count) {
                     break;
                 }
             }
