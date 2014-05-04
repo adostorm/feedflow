@@ -8,7 +8,7 @@
 namespace Util;
 
 
-class Validate {
+final class Validate {
 
 
 

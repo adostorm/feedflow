@@ -40,6 +40,15 @@ $di['db'] = function () use ($config) {
     ));
 };
 
+$di['link_userstate'] = function() use ($config) {
+    return new \Phalcon\Db\Adapter\Pdo\Mysql(array(
+        "host" => $config->link_userstate->host,
+        "username" => $config->link_userstate->username,
+        "password" => $config->link_userstate->password,
+        "dbname" => $config->link_userstate->dbname
+    ));
+};
+
 $di['config'] = function () use ($config) {
     return $config;
 };

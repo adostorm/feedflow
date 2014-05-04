@@ -7,8 +7,5 @@
 
 class MainTask extends \Phalcon\CLI\Task {
 
-    public function testAction() {
-        echo 1;
-    }
 
 }

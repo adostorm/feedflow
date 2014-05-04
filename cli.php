@@ -1,4 +1,5 @@
 <?php
+
 use Phalcon\DI\FactoryDefault\CLI as CliDI,
     Phalcon\CLI\Console as ConsoleApp;
 
@@ -20,15 +21,14 @@ $loader = new \Phalcon\Loader();
 
 $loader->registerDirs(
     array(
-        APPLICATION_PATH . '/vendor',
         APPLICATION_PATH . '/tasks',
         APPLICATION_PATH . '/models',
     )
 );
 
 $loader->registerNamespaces(array(
-    'HSocket'=>APPLICATION_PATH . '/vendor/handlersocket/',
-    'Redisc'=>APPLICATION_PATH . '/vendor/redis/',
+    'Util'=>APPLICATION_PATH . '/library/',
+    'HsMysql'=>APPLICATION_PATH . '/vendor/hsmysql/',
 ));
 
 $loader->register();
@@ -37,6 +37,14 @@ $loader->register();
 if(is_readable(APPLICATION_PATH . '/config/config.php')) {
     $config = include APPLICATION_PATH . '/config/config.php';
     $di->set('config', $config);
+    $di->set('link_userstate', function() use ($config) {
+        return new \Phalcon\Db\Adapter\Pdo\Mysql(array(
+            "host" => $config->link_userstate->host,
+            "username" => $config->link_userstate->username,
+            "password" => $config->link_userstate->password,
+            "dbname" => $config->link_userstate->dbname
+        ));
+    });
 }
 
 //Create a console application
