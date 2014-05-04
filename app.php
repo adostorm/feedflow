@@ -24,11 +24,11 @@ $app->post('/feed/create', array($feedController, 'create'));
 /**
  * 全站动态，根据app_id获取Redis的内容
  */
-$app->get('/timeline/public', array($feedController, 'getFeedByAppId'));
+$app->get('/feed/public_timeline', array($feedController, 'getFeedByAppId'));
 /**
  * 用户关注人的动态
  */
-$app->get('/timeline/friends', array($feedController, 'getFeedByUid'));
+$app->get('/feed/user_timeline', array($feedController, 'getFeedByUid'));
 
 $userController = new UserController();
 /**
@@ -99,6 +99,7 @@ $app->post('/friendships/destroy', function () use ($app) {
 
     $user = new UserModel();
     $result = $user->removeRelation($uid, $friend_uid);
+
 
     var_dump($result);
 });
