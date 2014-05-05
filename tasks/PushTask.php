@@ -21,14 +21,11 @@ class PushTask extends \Phalcon\CLI\Task {
         $feedModel = new FeedRelationModel($this->getDI());
         $countModel =  new UserCountModel($this->getDI());
 
-        $big_v_level = \Util\ReadConfig::get('setting.big_v_level', $this->getDI());
-
         while(($job = $queue->peekReady()) !== false) {
             $data = $job->getBody();
             list($app_id, $uid, $feed_id) = explode('|', $data);
 
-            $countData = $countModel->getCountByUid($uid);
-            if(isset($countData['fans_count']) && $countData['fans_count'] >= $big_v_level) {
+            if($countModel->isBigv($uid)) {
                 $job->delete();
                 continue;
             }

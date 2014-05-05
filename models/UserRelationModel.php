@@ -109,12 +109,6 @@ class UserRelationModel extends \HsMysql\Model
                 array('friend_uid', '=', $uid)
             ))->find($friend_uid);
             $this->redis->zadd(sprintf($this->cache_fans_key, $friend_uid), -$result['create_at'], $uid);
-
-            $result = $countModel->getCountByUid($uid);
-
-//            if(isset($result[''])) {
-//
-//            }
         }
 
         return $status;

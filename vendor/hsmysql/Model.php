@@ -64,6 +64,7 @@ class Model
     public function setIsAssociate($isAssociate)
     {
         $this->isAssociate = $isAssociate;
+        return $this;
     }
 
     public function __construct($di, $link='')
@@ -92,12 +93,14 @@ class Model
         if (is_object($this->di)) {
             $link = sprintf('link_%s', $this->dbname);
             $config['host'] = ReadConfig::get("{$link}.host", $this->di);
-            $config['password'] = ReadConfig::get("{$link}.password", $this->di);
+
             $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
             if ($readOrWrite == self::READ_PORT) {
                 $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
+                $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
             } else if ($readOrWrite == self::WRITE_PORT) {
                 $config['port'] = ReadConfig::get("{$link}.hs_write_port", $this->di);
+                $config['password'] = ReadConfig::get("{$link}.hs_write_passwd", $this->di);
             }
         }
         return $config;

@@ -31,7 +31,7 @@ class Handler {
         if(!isset($cacheHandler[$keyHandler])) {
             try {
                 $cacheHandler[$keyHandler] = new \HandlerSocket($this->config['host'], $this->config['port']);
-                $cacheHandler[$keyHandler]->auth($this->config['hs_passwd']);
+                $cacheHandler[$keyHandler]->auth($this->config['password']);
             } catch (\HandlerSocketException $e) {
                 echo $e->getMessage();
             }

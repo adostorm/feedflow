@@ -1,15 +1,6 @@
 <?php
 
 $config = new \Phalcon\Config(array(
-    'database' => array(
-        'adapter' => 'Mysql',
-        'host' => 'localhost',
-        'username' => 'root',
-        'password' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
-        'dbname' => 'test',
-        'hs_write_port' => 9998,
-        'hs_read_port' => 9999,
-    ),
     'application' => array(
         'libraryDir' => __DIR__ . '/../library/',
         'controllersDir' => __DIR__ . '/../controllers/',
@@ -36,7 +27,8 @@ $config = new \Phalcon\Config(array(
         'password' => '123456',
         'dbname' => 'userstate',
 
-        'hs_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
     ),
@@ -46,7 +38,8 @@ $config = new \Phalcon\Config(array(
         'password' => '123456',
         'dbname' => 'feed',
 
-        'hs_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
     ),
@@ -56,7 +49,8 @@ $config = new \Phalcon\Config(array(
         'password' => '123456',
         'dbname' => 'feedstate',
 
-        'hs_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
     ),

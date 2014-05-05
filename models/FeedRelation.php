@@ -92,11 +92,33 @@ class FeedRelation extends \Phalcon\Mvc\Model {
         $this->cache_user_id_feeds = \Util\ReadConfig::get('redis_cache_keys.user_id_feeds', $this->getDI());
     }
 
-    public function getListByUid($app_id, $uid, $timeline=0) {
+    public function getListByUid($app_id, $uid, $timeline=0, $offset, $limit) {
+        $key = sprintf($this->cache_follow_key, $uid);
+        $redis = \Util\RedisClient::getInstance($this->getDi());
+        $results = $redis->zrange($key, $limit, $offset);
+
+        if(!$results) {
+            $results = UserRelation::find(array(
+                "uid=:uid: and app_id=:app_id: and create_at>:timeline:",
+                'order'=>'create_at desc',
+                'limit'=>array(
+                    'number'=>200,
+                    'offset'=>0,
+                ),
+                'bind'=>array(
+                    'uid'=>$uid,
+                    'app_id'=>$app_id,
+                    'create_at'=>$timeline,
+                ),
+            ));
+
+
+        }
+
 
     }
 
-    public function getListByAppId($app_id) {
+    public function getListByAppId($app_id, $timeline=0) {
 
     }
 
