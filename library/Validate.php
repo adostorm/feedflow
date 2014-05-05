@@ -5,11 +5,3 @@
  * Time: 上午5:59
  */
 
-namespace Util;
-
-
-final class Validate {
-
-
-
-}

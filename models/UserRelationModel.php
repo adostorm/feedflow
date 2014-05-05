@@ -18,6 +18,8 @@ class UserRelationModel extends \HsMysql\Model
 
     public $cache_fans_key = '';
 
+    public $cache_big_v_set = '';
+
     public $redis = null;
 
     public function __construct($di) {
@@ -25,10 +27,14 @@ class UserRelationModel extends \HsMysql\Model
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
         $this->cache_follow_key = \Util\ReadConfig::get('redis_cache_keys.follow_uid_list', $this->getDi());
         $this->cache_fans_key = \Util\ReadConfig::get('redis_cache_keys.fans_uid_list', $this->getDi());
+        $this->cache_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
     }
 
     public function checkRelation($friend_uid, $uid)
     {
+        if($friend_uid == $uid) {
+            return -98;
+        }
         $this->setIsAssociate(false);
         $result = $this->field('status')->filter(array(
             array('friend_uid', '=', $friend_uid)
@@ -103,6 +109,12 @@ class UserRelationModel extends \HsMysql\Model
                 array('friend_uid', '=', $uid)
             ))->find($friend_uid);
             $this->redis->zadd(sprintf($this->cache_fans_key, $friend_uid), -$result['create_at'], $uid);
+
+            $result = $countModel->getCountByUid($uid);
+
+//            if(isset($result[''])) {
+//
+//            }
         }
 
         return $status;
@@ -150,7 +162,7 @@ class UserRelationModel extends \HsMysql\Model
             $countModel->updateCount($friend_uid, 'fans_count', 1, false);
 
             $this->redis->zrem(sprintf($this->cache_follow_key, $uid), $friend_uid);
-            $this->redis->zadd(sprintf($this->cache_fans_key, $friend_uid), $uid);
+            $this->redis->zrem(sprintf($this->cache_fans_key, $friend_uid), $uid);
         }
 
         return $status;

@@ -25,7 +25,7 @@ class PushTask extends \Phalcon\CLI\Task {
 
         while(($job = $queue->peekReady()) !== false) {
             $data = $job->getBody();
-            list($uid, $feed_id) = explode('|', $data);
+            list($app_id, $uid, $feed_id) = explode('|', $data);
 
             $countData = $countModel->getCountByUid($uid);
             if(isset($countData['fans_count']) && $countData['fans_count'] >= $big_v_level) {
@@ -40,9 +40,11 @@ class PushTask extends \Phalcon\CLI\Task {
                 $offset = ($page - 1) * $count - 1;
                 foreach($results as $result) {
                     $feedModel->create(array(
+                        'app_id'=>$app_id,
                         'uid'=>$result['friend_id'],
                         'friend_uid'=>$uid,
                         'feed_id'=>$feed_id,
+                        'timeline'=>time(),
                     ));
                 }
                 if(count($results) <= $count) {

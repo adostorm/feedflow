@@ -75,6 +75,7 @@ $config = new \Phalcon\Config(array(
         'follow_uid_list'=>'cache:follow:%d:list',
         'fans_uid_list'=>'cache:fans:%d:list',
         'feed_uid_push'=>'cache:feed:%d:push',
+        'big_v_set'=> 'cache:big_v_set',
     ),
 
     'queue_connect' => array(

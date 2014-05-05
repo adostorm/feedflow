@@ -92,7 +92,7 @@ class FeedRelation extends \Phalcon\Mvc\Model {
         $this->cache_user_id_feeds = \Util\ReadConfig::get('redis_cache_keys.user_id_feeds', $this->getDI());
     }
 
-    public function getListByUid($uid) {
+    public function getListByUid($app_id, $uid, $timeline=0) {
 
     }
 

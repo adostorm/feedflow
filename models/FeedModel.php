@@ -63,11 +63,11 @@ class FeedModel extends \HsMysql\Model {
         return $result;
     }
 
-    public function push($uid, $feed_id) {
+    public function push($app_id, $uid, $feed_id) {
         $key = \Util\ReadConfig::get('queue_keys.pushfeeds', $this->getDi());
         $beans = \Util\BStalkClient::getInstance($this->getDi());
         $beans->choose(stprinf($key, $uid%10));
-        $beans->put($uid.'|'.$feed_id);
+        $beans->put($app_id.'|'.$uid.'|'.$feed_id);
         $beans->disconnect();
     }
 }
