@@ -37,14 +37,21 @@ $loader->register();
 if(is_readable(APPLICATION_PATH . '/config/config.php')) {
     $config = include APPLICATION_PATH . '/config/config.php';
     $di->set('config', $config);
-    $di->set('link_userstate', function() use ($config) {
-        return new \Phalcon\Db\Adapter\Pdo\Mysql(array(
-            "host" => $config->link_userstate->host,
-            "username" => $config->link_userstate->username,
-            "password" => $config->link_userstate->password,
-            "dbname" => $config->link_userstate->dbname
-        ));
-    });
+
+    foreach($config as $k=>$v) {
+        if(0===stripos($k, 'link_')) {
+            $di->set($k, function() use ($v) {
+                return new \Phalcon\Db\Adapter\Pdo\Mysql(array(
+                    "host" => $v->host,
+                    "username" => $v->username,
+                    "password" => $v->password,
+                    "dbname" => $v->dbname
+                ));
+            });
+        }
+    }
+
+    var_dump($di);
 }
 
 //Create a console application

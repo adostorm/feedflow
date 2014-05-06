@@ -92,10 +92,16 @@ class Model
         $config = array();
         if (is_object($this->di)) {
             $link = sprintf('link_%s', $this->dbname);
-            $config['host'] = ReadConfig::get("{$link}.host", $this->di);
-
             $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
-            if ($readOrWrite == self::READ_PORT) {
+
+            $config['host'] = ReadConfig::get("{$link}.host", $this->di);
+            $slave = ReadConfig::get("{$link}.host", $this->di);
+
+            if($readOrWrite == self::READ_PORT && $slave) {
+                $config['host'] = array_rand($slave)['host'];
+                $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
+                $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
+            } else if ($readOrWrite == self::READ_PORT) {
                 $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
                 $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
             } else if ($readOrWrite == self::WRITE_PORT) {

@@ -28,26 +28,18 @@ $di['url'] = function () use ($config) {
     return $url;
 };
 
-/**
- * Database connection is created based in the parameters defined in the configuration file
- */
-$di['db'] = function () use ($config) {
-    return new DbAdapter(array(
-        "host" => $config->database->host,
-        "username" => $config->database->username,
-        "password" => $config->database->password,
-        "dbname" => $config->database->dbname
-    ));
-};
-
-$di['link_userstate'] = function() use ($config) {
-    return new \Phalcon\Db\Adapter\Pdo\Mysql(array(
-        "host" => $config->link_userstate->host,
-        "username" => $config->link_userstate->username,
-        "password" => $config->link_userstate->password,
-        "dbname" => $config->link_userstate->dbname
-    ));
-};
+foreach($config as $k=>$v) {
+    if(0===stripos($k, 'link_')) {
+        $di->set($k, function() use ($v) {
+            return new DbAdapter(array(
+                "host" => $v->host,
+                "username" => $v->username,
+                "password" => $v->password,
+                "dbname" => $v->dbname
+            ));
+        });
+    }
+}
 
 $di['config'] = function () use ($config) {
     return $config;

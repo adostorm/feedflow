@@ -5,7 +5,7 @@
  * Time: 下午6:03
  */
 
-class FeedRelation extends \Phalcon\Mvc\Model {
+class FeedRelation extends CCommonModel {
 
     public $uid = 0;
 
@@ -17,7 +17,11 @@ class FeedRelation extends \Phalcon\Mvc\Model {
 
     public $cache_app_id_feeds = '';
 
-    public $cache_user_id_feeds = '';
+    public $cache_friend_appid_id_feeds = '';
+
+    public $cache_me_appid_id_feeds = '';
+
+    public $redis = null;
 
     /**
      * @param int $feed_id
@@ -86,14 +90,18 @@ class FeedRelation extends \Phalcon\Mvc\Model {
 
     public function initialize()
     {
-        $this->setConnectionService('link_feedstate');
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
         $this->cache_app_id_feeds = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $this->getDI());
-        $this->cache_user_id_feeds = \Util\ReadConfig::get('redis_cache_keys.user_id_feeds', $this->getDI());
+        $this->cache_friend_appid_id_feeds = \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds', $this->getDI());
+        $this->cache_me_appid_id_feeds = \Util\ReadConfig::get('redis_cache_keys.me_appid_id_feeds', $this->getDI());
+
+        parent::initialize();
     }
 
-    public function getListByUid($app_id, $uid, $timeline=0, $offset, $limit) {
-        $key = sprintf($this->cache_follow_key, $uid);
+
+
+    public function getFollowFeedsByUid($app_id, $uid, $timeline=0, $offset=0, $limit=15) {
+        $key = sprintf($this->cache_friend_appid_id_feeds, $uid);
         $redis = \Util\RedisClient::getInstance($this->getDi());
         $results = $redis->zrange($key, $limit, $offset);
 
@@ -112,14 +120,21 @@ class FeedRelation extends \Phalcon\Mvc\Model {
                 ),
             ));
 
-
+            $feedModel = new UserRelationModel($this->getDI());
+            $bigvs = $feedModel->get($uid);
+            if($bigvs) {
+                foreach($bigvs as $k=>$v) {
+                    if($v) {
+                        $friend_feeds = $this->getListByUid($app_id, $k);
+                        $this->redis->pipeline();
+                        foreach($friend_feeds as $feed) {
+                            $this->redis->zadd($key, -$feed['create_at'], msgpack_pack($feed));
+                        }
+                        $this->redis->exec();
+                    }
+                }
+            }
         }
-
-
-    }
-
-    public function getListByAppId($app_id, $timeline=0) {
-
     }
 
 }

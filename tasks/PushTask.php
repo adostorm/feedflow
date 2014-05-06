@@ -39,7 +39,6 @@ class PushTask extends \Phalcon\CLI\Task {
                     $feedModel->create(array(
                         'app_id'=>$app_id,
                         'uid'=>$result['friend_id'],
-                        'friend_uid'=>$uid,
                         'feed_id'=>$feed_id,
                         'timeline'=>time(),
                     ));

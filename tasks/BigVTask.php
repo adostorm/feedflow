@@ -15,10 +15,6 @@ class BigVTask extends \Phalcon\CLI\Task {
     private function _process() {
         $count = new UserCountModel($this->getDI());
         $results = $count->getBigVList();
-
-
-        $results = $count->getBigVIds();
-        var_dump($results);
     }
 
 }

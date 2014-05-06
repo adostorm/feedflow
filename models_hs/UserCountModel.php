@@ -17,10 +17,16 @@ class UserCountModel extends \HsMysql\Model {
 
     private $counts_key = '';
 
+    public $cache_big_v_set  = '';
+
+    public $big_v_level = '';
+
     public function __construct($di) {
         parent::__construct($di, '');
         $this->redis = \Util\RedisClient::getInstance($di);
         $this->counts_key = \Util\ReadConfig::get('redis_cache_keys.user_id_counts', $di);
+        $this->cache_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
+        $this->big_v_level = \Util\ReadConfig::get('setting.big_v_level', $this->getDi());
     }
 
     public function getCountByUid($uid) {
@@ -38,6 +44,14 @@ class UserCountModel extends \HsMysql\Model {
         }
 
         return $counts;
+    }
+
+    public function getCountByField($uid, $field) {
+        $count = $this->getCountByUid($uid);
+        if(isset($count[$field])) {
+            return (int) $count[$field];
+        }
+        return 0;
     }
 
     public function updateCount($uid, $field, $num=0, $incr=true) {
@@ -81,8 +95,7 @@ class UserCountModel extends \HsMysql\Model {
     }
 
     public function getBigVIds() {
-        $cache_key_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
-        $results = $this->redis->hgetall($cache_key_big_v_set);
+        $results = $this->redis->hgetall($this->cache_big_v_set);
         $rets = array();
         if($results) {
             foreach($results as $id=>$fans_count) {
@@ -94,14 +107,12 @@ class UserCountModel extends \HsMysql\Model {
 
     public function getBigVList() {
         $results = $this->field('uid,fans_count')->filter(array(
-            array('fans_count','>=',\Util\ReadConfig::get('setting.big_v_level', $this->getDi())),
+            array('fans_count','>=', $this->big_v_level),
         ))->limit(0, 2000)->find(0, '>');
-
-        $cache_key_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
 
         $this->redis->pipeline();
         foreach($results as $result) {
-            $this->redis->hset($cache_key_big_v_set, $result['uid'], $result['fans_count']);
+            $this->redis->hset($this->cache_big_v_set, $result['uid'], $result['fans_count']);
         }
 
         $this->redis->exec();
@@ -110,9 +121,7 @@ class UserCountModel extends \HsMysql\Model {
     }
 
     public function isBigv($uid) {
-        $setting_big_v_level = \Util\ReadConfig::get('setting.big_v_level', $this->getDi());
-        $cache_key_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
-        $result = $this->redis->hget($cache_key_big_v_set, $uid);
+        $result = $this->redis->hget($this->cache_big_v_set, $uid);
         if(!$result) {
             $results = $this->getCountByUid($uid);
             if(isset($results['fans_count'])) {
@@ -120,7 +129,12 @@ class UserCountModel extends \HsMysql\Model {
             }
         }
         $result = intval($result);
-        return $result >= $setting_big_v_level;
+        return $result >= $this->big_v_level;
+    }
+
+    public function getBigVCount() {
+        $result = $this->redis->hlen($this->cache_big_v_set);
+        return intval($result);
     }
 
 }

@@ -208,7 +208,9 @@ class UserRelationModel extends \HsMysql\Model
         return $results;
     }
 
+    public function getBigVViaFollowList($uid) {
 
+    }
 
 
 }

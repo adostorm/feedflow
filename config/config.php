@@ -6,6 +6,7 @@ $config = new \Phalcon\Config(array(
         'controllersDir' => __DIR__ . '/../controllers/',
         'vendorDir' => __DIR__ . '/../vendor/',
         'modelsDir' => __DIR__ . '/../models/',
+        'models_hsDir' => __DIR__ . '/../models_hs/',
         'viewsDir' => __DIR__ . '/../views/',
         'baseUri' => '/pj_feed/',
         'path' => __DIR__ . '/../',
@@ -23,6 +24,10 @@ $config = new \Phalcon\Config(array(
     ),
     'link_userstate' => array(
         'host' => '127.0.0.1',
+        'slave'=>array(
+            'host'=>'127.0.0.2',
+            'port'=>0,
+        ),
         'username'=>'root',
         'password' => '123456',
         'dbname' => 'userstate',
@@ -34,6 +39,7 @@ $config = new \Phalcon\Config(array(
     ),
     'link_feed' => array(
         'host' => '127.0.0.1',
+        'slave'=>'',
         'username'=>'root',
         'password' => '123456',
         'dbname' => 'feed',
@@ -45,6 +51,7 @@ $config = new \Phalcon\Config(array(
     ),
     'link_feedstate'=>array(
         'host' => '127.0.0.1',
+        'slave'=>'',
         'username'=>'root',
         'password' => '123456',
         'dbname' => 'feedstate',
@@ -63,7 +70,8 @@ $config = new \Phalcon\Config(array(
 
     'redis_cache_keys' => array(
         'app_id_feeds' => 'cache:app:%d:feeds',
-        'user_id_feeds' => 'cache:user:%d:feeds',
+        'friend_appid_id_feeds' => 'cache:app:%d:friend:%d:feeds',
+        'me_appid_id_feeds'=>'cache:app:%d:me:%d:feeds',
         'user_id_counts' => 'cache:user:%d:counts',
         'feed_id_content'=>'cache:feed:%d:content',
         'follow_uid_list'=>'cache:follow:%d:list',
