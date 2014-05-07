@@ -22,6 +22,7 @@ class FeedTask extends \Phalcon\CLI\Task {
         $cache_me_appid_id_feeds = \Util\ReadConfig::get('redis_cache_keys.me_appid_id_feeds', $di);
 
         $model = new FeedModel($this->getDI());
+        $countModel = new UserCountModel($this->getDI());
 
         while(($job = $queue->peekReady()) !== false) {
             $message = $job->getBody();
@@ -29,10 +30,15 @@ class FeedTask extends \Phalcon\CLI\Task {
             $newMessage = msgpack_unpack($message);
             $feed_id = $model->create($newMessage);
             if($feed_id > 0) {
-                $redis->zadd(sprintf($cache_app_id_feeds, $newMessage['app_id']), -$newMessage['create_at'], $oldMessage);
-                $redis->zadd(sprintf($cache_me_appid_id_feeds, $newMessage['app_id'], $newMessage['author_id']), -$newMessage['create_at'], $oldMessage);
+                $app_id = $newMessage['app_id'];
+                $author_id = $newMessage['author_id'];
+                $redis->zadd(sprintf($cache_app_id_feeds, $app_id), -$newMessage['create_at'], $oldMessage);
 
-                $model->push($newMessage['app_id'], $newMessage['author_id'], $feed_id);
+                if($countModel->isBigv($author_id)) {
+                    $redis->zadd(sprintf($cache_me_appid_id_feeds, $app_id, $author_id), -$newMessage['create_at'], $oldMessage);
+                }
+
+                $model->push($app_id, $author_id, $feed_id);
                 $job->delete();
             }
         }

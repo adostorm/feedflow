@@ -103,6 +103,10 @@ class UserController extends CController {
         $user = new UserRelationModel($this->getDI());
         $result = $user->createRelation($uid, $friend_uid);
 
+        if($result == -98) {
+            throw new \Util\APIException(403, 2002, '不能关注自己');
+        }
+
         if(in_array($result, array(1, 2))) {
             $msg = '关注成功';
         } else {
@@ -115,6 +119,7 @@ class UserController extends CController {
     }
 
     public function unFollow() {
+
         $uid = $this->request->getPost('uid', 'int');
         $friend_uid = $this->request->getPost('friend_uid', 'int');
 
@@ -126,6 +131,12 @@ class UserController extends CController {
 
         $user = new UserRelationModel($this->getDI());
         $result = $user->removeRelation($uid, $friend_uid);
+
+        if($result == -98) {
+            throw new \Util\APIException(403, 2002, '不能关注自己');
+        } else if($result == -99) {
+            throw new \Util\APIException(403, 2003, '不是好友');
+        }
 
         if(in_array($result, array(-1, 0))) {
             $msg = '取消成功';

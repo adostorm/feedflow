@@ -24,7 +24,7 @@ class FeedController extends CController {
         $zaddKey = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
         $results = $redis->zrange(sprintf($zaddKey, $app_id), $limit, $offset);
 
-        var_dump($results);
+        $this->render($results);
     }
 
     public function getFeedListByUid() {
@@ -51,9 +51,8 @@ class FeedController extends CController {
 
         $queue->disconnect();
 
-        echo json_encode(array(
-            'status'=>1,
-            'msg'=>'Ok.'
+        $this->render(array(
+            'status'=>1
         ));
     }
 

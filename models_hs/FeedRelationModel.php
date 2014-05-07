@@ -30,6 +30,7 @@ class FeedRelationModel extends \HsMysql\Model
             'uid' => (int) $model['uid'],
             'friend_uid' => (int) $model['friend_uid'],
             'feed_id' => (int) $model['feed_id'],
+            'create_at'=> (int) $model['create_at'],
         ));
         return $result;
     }

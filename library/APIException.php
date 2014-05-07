@@ -13,6 +13,11 @@ class APIException extends Exception{
 
     protected $status = 0;
 
+    protected $_types = array(
+        'json'=>'application/json',
+        'xml'=>'application/xml',
+    );
+
     public function __construct($status, $code = 0, $message)
     {
         $this->status = $status;
@@ -36,7 +41,7 @@ class APIException extends Exception{
         return json_encode($result);
     }
 
-    public function setContentType($type, $charset = 'utf-8')
+    public function sendContentType($type, $charset = 'utf-8')
     {
         $type = strtolower($type);
         if (!isset($this->_types[$type])) {

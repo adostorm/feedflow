@@ -17,15 +17,15 @@ class PushTask extends \Phalcon\CLI\Task {
         $queue->choose($key);
         $queue->watch($key);
 
-        $userModel = new UserRelationModel($this->getDI());
-        $feedModel = new FeedRelationModel($this->getDI());
-        $countModel =  new UserCountModel($this->getDI());
+        $userRelation = new UserRelationModel($this->getDI());
+        $feedRelation = new FeedRelationModel($this->getDI());
+        $countRelation =  new UserCountModel($this->getDI());
 
         while(($job = $queue->peekReady()) !== false) {
             $data = $job->getBody();
             list($app_id, $uid, $feed_id) = explode('|', $data);
 
-            if($countModel->isBigv($uid)) {
+            if($countRelation->isBigv($uid)) {
                 $job->delete();
                 continue;
             }
@@ -33,14 +33,14 @@ class PushTask extends \Phalcon\CLI\Task {
             $page = 1;
             $offset = 0;
             $count = 101;
-            while($results = $userModel->getFansList($uid, $offset, $count)) {
+            while($results = $userRelation->getFansList($uid, $offset, $count)) {
                 $offset = ($page - 1) * $count - 1;
                 foreach($results as $result) {
-                    $feedModel->create(array(
+                    $feedRelation->create(array(
                         'app_id'=>$app_id,
                         'uid'=>$result['friend_id'],
                         'feed_id'=>$feed_id,
-                        'timeline'=>time(),
+                        'create_at'=>time(),
                     ));
                 }
                 if(count($results) <= $count) {

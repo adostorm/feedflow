@@ -95,10 +95,11 @@ class Model
             $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
 
             $config['host'] = ReadConfig::get("{$link}.host", $this->di);
-            $slave = ReadConfig::get("{$link}.host", $this->di);
+            $slave = ReadConfig::get("{$link}.slave", $this->di)->toArray();
 
             if($readOrWrite == self::READ_PORT && $slave) {
-                $config['host'] = array_rand($slave)['host'];
+                $randSlave = array_rand($slave);
+                $config['host'] = $randSlave['host'];
                 $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
                 $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
             } else if ($readOrWrite == self::READ_PORT) {

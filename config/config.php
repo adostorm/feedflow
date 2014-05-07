@@ -24,10 +24,7 @@ $config = new \Phalcon\Config(array(
     ),
     'link_userstate' => array(
         'host' => '127.0.0.1',
-        'slave'=>array(
-            'host'=>'127.0.0.2',
-            'port'=>0,
-        ),
+        'slave'=>array(),
         'username'=>'root',
         'password' => '123456',
         'dbname' => 'userstate',
@@ -39,7 +36,7 @@ $config = new \Phalcon\Config(array(
     ),
     'link_feed' => array(
         'host' => '127.0.0.1',
-        'slave'=>'',
+        'slave'=>array(),
         'username'=>'root',
         'password' => '123456',
         'dbname' => 'feed',
@@ -51,7 +48,7 @@ $config = new \Phalcon\Config(array(
     ),
     'link_feedstate'=>array(
         'host' => '127.0.0.1',
-        'slave'=>'',
+        'slave'=>array(),
         'username'=>'root',
         'password' => '123456',
         'dbname' => 'feedstate',
@@ -78,6 +75,7 @@ $config = new \Phalcon\Config(array(
         'fans_uid_list'=>'cache:fans:%d:list',
         'feed_uid_push'=>'cache:feed:%d:push',
         'big_v_set'=> 'cache:big_v_set',
+        'friend_appid_id_feeds_timeline'=>'cache:feeds:%d:timeline'
     ),
 
     'queue_connect' => array(

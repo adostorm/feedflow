@@ -64,7 +64,8 @@ final class RedisClient
             throw new Exception(sprintf('class "%s" does not have a method "%s" in %s on line %s',
                 'Redis', $name, __FILE__, __LINE__));
         }
-        return call_user_func_array(array($this->redis, $name), $arguments);
+            return call_user_func_array(array($this->redis, $name), $arguments);
+
     }
 
 }

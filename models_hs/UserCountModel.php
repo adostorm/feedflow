@@ -137,4 +137,17 @@ class UserCountModel extends \HsMysql\Model {
         return intval($result);
     }
 
+    public function diffBigV($ids) {
+        $tmp = array();
+        if(!$ids) {
+            $result = $this->redis->hmGet($this->cache_big_v_set, $ids);
+            foreach($result as $k=>$v) {
+                if($v) {
+                    $tmp[] = $k;
+                }
+            }
+        }
+        return $tmp;
+    }
+
 }

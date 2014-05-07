@@ -37,8 +37,8 @@ class UserRelationModel extends \HsMysql\Model
         }
         $this->setIsAssociate(false);
         $result = $this->field('status')->filter(array(
-            array('friend_uid', '=', $friend_uid)
-        ))->find($uid);
+            array('friend_uid', '=', $uid)
+        ))->find($friend_uid);
         return isset($result[0]) ? intval($result[0]) : -99;
     }
 
@@ -131,7 +131,7 @@ class UserRelationModel extends \HsMysql\Model
                 $this->filter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
-                        'status'=>-$status
+                        'status'=>$status
                     ));
                 break;
 
@@ -147,6 +147,10 @@ class UserRelationModel extends \HsMysql\Model
                 ))->update($friend_uid, array(
                         'status'=>$status
                     ));
+                break;
+
+            case -1:
+                $status = -99;
                 break;
         }
 
@@ -168,27 +172,20 @@ class UserRelationModel extends \HsMysql\Model
     }
 
 
+    //为了建立缓存而用
     public function getFollowList($uid, $offset=0, $limit=15) {
-        $results = $this->field('uid,friend_uid,status')->filter(array(
-            array('status', '>=', 0),
-            array('status', '<=', 1),
-        ))->limit($offset, $limit)->find($uid);
-        return $results;
-    }
-
-    public function getFansList($uid, $offset=0, $limit=15) {
-
         $redisOffset = $offset;
         $redisLimit = $offset + $limit - 1;
 
-        $key = sprintf($this->cache_fans_key, $uid);
+        $key = sprintf($this->cache_follow_key, $uid);
         $redisResults = $this->redis->zrange($key, $redisOffset, $redisLimit);
 
         $results = array();
         if(!$redisResults) {
 
-            $tableResults = $this->field('uid,friend_uid,status')->filter(array(
-                array('status', '>', 0),
+            $tableResults = $this->field('uid,friend_uid,status,create_at')->filter(array(
+                array('status', '>=', 0),
+                array('status', '<=', 1),
             ))->limit($offset, $limit)->find($uid);
 
             if($tableResults) {
@@ -208,9 +205,37 @@ class UserRelationModel extends \HsMysql\Model
         return $results;
     }
 
-    public function getBigVViaFollowList($uid) {
+    //为了建立缓存而用
+    public function getFansList($uid, $offset=0, $limit=15) {
 
+        $redisOffset = $offset;
+        $redisLimit = $offset + $limit - 1;
+
+        $key = sprintf($this->cache_fans_key, $uid);
+        $redisResults = $this->redis->zrange($key, $redisOffset, $redisLimit);
+
+        $results = array();
+        if(!$redisResults) {
+
+            $tableResults = $this->field('uid,friend_uid,status,create_at')->filter(array(
+                array('status', '>', 0),
+            ))->limit($offset, $limit)->find($uid);
+
+            if($tableResults) {
+                $this->redis->pipeline();
+                foreach($tableResults as $_tb_result) {
+                    $this->redis->zadd($key, -$_tb_result['create_at'], $_tb_result['friend_uid']);
+                    $results[] = $_tb_result['friend_uid'];
+                }
+                $this->redis->exec();
+            }
+            unset($tableResults);
+        } else {
+            $results = $redisResults;
+        }
+        unset($redisResults);
+
+        return $results;
     }
-
 
 }
