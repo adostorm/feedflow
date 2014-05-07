@@ -14,13 +14,19 @@ class UserRelationModel extends \HsMysql\Model
 
     public $index = 'idx0';
 
+    public $partition = array(
+        'field'=>'uid',
+        'mode'=>'mod',
+        'step'=>100
+    );
+
+    public $redis = null;
+
     public $cache_follow_key = '';
 
     public $cache_fans_key = '';
 
     public $cache_big_v_set = '';
-
-    public $redis = null;
 
     public function __construct($di) {
         parent::__construct($di, '');

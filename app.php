@@ -25,3 +25,8 @@ $app->post('/friendships/destroy', array($userController, 'unFollow'));
 $app->get('/friendships/followers', array($userController, 'getFansList'));
 $app->get('/friendships/friends', array($userController, 'getFollowList'));
 
+
+$app->get('/install/db', function () use ($app){
+
+});
+

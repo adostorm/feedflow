@@ -7,6 +7,17 @@
 
 class MainTask extends \Phalcon\CLI\Task {
 
+    public function test0Action() {
+        $u = new UserRelationModel($this->getDI());
+//        $result = $u->field('uid,friend_uid')->find(3);
+//        var_dump($result);
+
+        $u->insert(array(
+            'uid'=>1,
+            'friend_uid'=>3,
+        ));
+    }
+
     public function test1Action() {
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
         $cache_key_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDI());

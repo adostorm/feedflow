@@ -131,13 +131,15 @@ class UserRelation extends \Phalcon\Mvc\Model
                 ),
             ));
 
-            $results = array();
             if($models->getFirst()) {
+                $this->redis->pipeline();
                 foreach($models as $model) {
                     $this->redis->zadd($key, -$model->getCreateAt(), $model->friend_uid);
-                    $results[] = $model->friend_uid;
                 }
+                $this->redis->exec();
             }
+
+            $results = $redis->zrange($key, $limit, $offset);
         }
 
         return $results;

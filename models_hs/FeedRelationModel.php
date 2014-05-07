@@ -14,9 +14,15 @@ class FeedRelationModel extends \HsMysql\Model
 
     public $index = 'idx0';
 
-    public $cache_me_appid_id_feeds  = '';
+    public $partition = array(
+        'field'=>'uid',
+        'mode'=>'mod',
+        'step'=>100
+    );
 
     public $redis = null;
+
+    public $cache_me_appid_id_feeds  = '';
 
     public function __construct($di) {
         parent::__construct($di, '');
@@ -27,8 +33,8 @@ class FeedRelationModel extends \HsMysql\Model
     public function create($model)
     {
         $result = $this->insert(array(
+            'app_id' => (int) $model['app_id'],
             'uid' => (int) $model['uid'],
-            'friend_uid' => (int) $model['friend_uid'],
             'feed_id' => (int) $model['feed_id'],
             'create_at'=> (int) $model['create_at'],
         ));

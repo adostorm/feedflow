@@ -7,6 +7,7 @@
 
 namespace HsMysql;
 
+use Phalcon\Exception;
 use Util\ReadConfig;
 
 class Model
@@ -49,6 +50,8 @@ class Model
     private $isAssociate = true;
 
     public $insertId = 0;
+
+    public $partition = array();
 
     /**
      * @return null
@@ -147,14 +150,24 @@ class Model
     {
         $this->_parseFilter();
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::READ_PORT));
-        $handlersocket = $handler->initOpenIndex(self::SELECT, $this->tbname, $this->index, $this->fields, $this->indexFilter);
-        $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter);
+        $this->_parsePartition($key);
+        try {
+            $handlersocket = $handler->initOpenIndex(self::SELECT, $this->tbname, $this->index, $this->fields, $this->indexFilter);
+            $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter);
+            if($result===false) {
+                echo ($handlersocket->getError());
+            }
+        } catch(Exception $e) {
+            echo $e->getMessage();
+        }
+
         $result = $this->_parseData($result);
         return $result;
     }
 
     public function update($key, $data, $op = '=')
     {
+        $this->_parsePartition($key);
         $this->_parseFilter();
         $_fields = array();
         $_values = array();
@@ -163,8 +176,15 @@ class Model
             $_values[] = $_value;
         }
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
-        $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $_fields, $this->indexFilter);
-        $result = $handlersocket->executeUpdate(self::UPDATE, $op, array($key), $_values, $this->limit, $this->offset, $this->whereFilter);
+        try {
+            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $_fields, $this->indexFilter);
+            $result = $handlersocket->executeUpdate(self::UPDATE, $op, array($key), $_values, $this->limit, $this->offset, $this->whereFilter);
+            if($result===false) {
+                var_dump($handlersocket->getError());
+            }
+        } catch(Exception $e) {
+            echo $e->getMessage();
+        }
         return $result;
     }
 
@@ -176,14 +196,24 @@ class Model
             $_fields[] = $_field;
             $_values[] = $_value;
         }
+        $this->_parsePartitionByInsert($data);
+
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
-        $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $_fields);
-        $result = $handlersocket->executeInsert(self::INSERT, $_values);
+        try {
+            $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $_fields);
+            $result = $handlersocket->executeInsert(self::INSERT, $_values);
+            if($result===false) {
+                echo ($handlersocket->getError());
+            }
+        } catch(Exception $e) {
+            echo $e->getMessage();
+        }
         return $result;
     }
 
     public function delete($key, $op = '=')
     {
+        $this->_parsePartition($key);
         $this->_parseFilter();
         $field = array();
         if (null !== $this->indexFilter) {
@@ -216,8 +246,15 @@ class Model
         }
         $this->field($_fields);
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
-        $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $_fields, $this->indexFilter);
-        $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $_values, $this->whereFilter);
+        try {
+            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $_fields, $this->indexFilter);
+            $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $_values, $this->whereFilter);
+            if($result===false) {
+                echo ($handlersocket->getError());
+            }
+        } catch(Exception $e) {
+            echo $e->getMessage();
+        }
         $result = $this->_parseData($result);
         return $result;
     }
@@ -225,6 +262,27 @@ class Model
     public function multi()
     {
 
+    }
+
+    public function _parsePartitionByInsert($data) {
+        if($this->partition) {
+            if($this->partition['mode']=='mod') {
+                if(isset($data[$this->partition['field']])) {
+                    $ret = $data[$this->partition['field']]%$this->partition['step'];
+                    $this->tbname .= '_'.$ret;
+                }
+
+            }
+        }
+    }
+
+    public function _parsePartition($id) {
+        if(is_array($this->partition) && $this->partition) {
+            if($this->partition['mode']=='mod') {
+                $ret = $id%$this->partition['step'];
+                $this->tbname .= '_'.$ret;
+            }
+        }
     }
 
     private function _parseData($data)

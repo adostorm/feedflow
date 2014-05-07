@@ -23,6 +23,7 @@ $loader->registerDirs(
     array(
         APPLICATION_PATH . '/tasks',
         APPLICATION_PATH . '/models',
+        APPLICATION_PATH . '/models_hs',
     )
 );
 
@@ -50,8 +51,6 @@ if(is_readable(APPLICATION_PATH . '/config/config.php')) {
             });
         }
     }
-
-    var_dump($di);
 }
 
 //Create a console application
