@@ -27,7 +27,7 @@ class PushTask extends \Phalcon\CLI\Task {
             $data = $job->getBody();
             list($app_id, $uid, $feed_id, $time) = explode('|', $data);
 
-            if($countRelation->isBigv($uid)) {
+            if($countRelation->setBigv($uid)) {
                 $job->delete();
                 continue;
             }

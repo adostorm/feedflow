@@ -8,7 +8,6 @@
 class FeedController extends CController {
 
     public function getFeedListByAppId() {
-
         $app_id = $this->request->get('app_id', 'int');
         $page = $this->request->get('page', 'int');
         $count = $this->request->get('count', 'int');
@@ -16,19 +15,47 @@ class FeedController extends CController {
         $page = $page > 0 ? $page : 1;
         $count = $count > 0 && $count <= 50 ? $count : 15;
 
-        $limit = ($page - 1) * $count;
-        $offset = $count * $page - 1;
+        $offset = ($page - 1) * $count;
+        $limit = $count * $page - 1;
+
+        if($limit > 200) {
+            $limit = 200;
+            if($offset > 200) {
+                $offset = $limit - $count;
+            }
+        }
 
         $di = $this->getDI();
         $redis = \Util\RedisClient::getInstance($di);
         $zaddKey = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
-        $results = $redis->zrange(sprintf($zaddKey, $app_id), $limit, $offset);
+        $results = $redis->zrange(sprintf($zaddKey, $app_id), $offset, $limit);
 
         $this->render($results);
     }
 
     public function getFeedListByUid() {
+        $app_id = $this->request->get('app_id', 'int');
+        $uid = $this->request->get('uid', 'int');
+        $page = $this->request->get('page', 'int');
+        $count = $this->request->get('count', 'int');
 
+        $page = $page > 0 ? $page : 1;
+        $count = $count > 0 && $count <= 50 ? $count : 15;
+
+        $offset = ($page - 1) * $count;
+        $limit = $offset + $page - 1;
+
+        if($limit > 200) {
+            $limit = 200;
+            if($offset > 200) {
+                $offset = $limit - $count;
+            }
+        }
+
+        $feedRelation = new FeedRelation();
+        $result = $feedRelation->getFollowFeedsByUid($app_id, $uid, $offset, $limit);
+
+        $this->render($result);
     }
 
     public function create() {

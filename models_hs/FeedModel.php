@@ -17,7 +17,8 @@ class FeedModel extends \HsMysql\Model {
 
     public function __construct($di) {
         parent::__construct($di, '');
-        $this->cache_key = \Util\ReadConfig::get('redis_cache_keys.feed_id_content', $this->getDi());
+        $this->cache_key =
+            \Util\ReadConfig::get('redis_cache_keys.feed_id_content', $this->getDi());
     }
 
     public function create($model) {
@@ -41,7 +42,7 @@ class FeedModel extends \HsMysql\Model {
             $key = sprintf($this->cache_key, $feed_id);
             $redis = \Util\RedisClient::getInstance($this->getDi());
             $redis->set($key, msgpack_pack($model),
-                \Util\ReadConfig::get('setting.cache_timeout_alg1', $this->getDi()));
+                \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
         }
 
         return $feed_id;
@@ -61,7 +62,7 @@ class FeedModel extends \HsMysql\Model {
             $result = $this->field($fields)->find($feed_id);
             if($result)  {
                 $redis->set($key, msgpack_pack($result),
-                    \Util\ReadConfig::get('setting.cache_timeout_alg1', $this->getDi()));
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
             }
         } else {
             $result = msgpack_unpack($result);

@@ -16,8 +16,10 @@ class UserRelationModel extends \HsMysql\Model
 
     public $partition = array(
         'field'=>'uid',
-        'mode'=>'mod',
-        'step'=>100
+        'mode'=>'range',
+        'rules'=>array(
+            1=>array(1, 2),
+        ),
     );
 
     public $redis = null;
@@ -100,7 +102,7 @@ class UserRelationModel extends \HsMysql\Model
             $countModel->updateCount($uid, 'follow_count', 1);
             $countModel->updateCount($friend_uid, 'fans_count', 1);
 
-            $countModel->isBigv($friend_uid);
+            $countModel->setBigv($friend_uid);
         }
 
         return $status;
@@ -151,7 +153,7 @@ class UserRelationModel extends \HsMysql\Model
             $countModel->updateCount($uid, 'follow_count', 1, false);
             $countModel->updateCount($friend_uid, 'fans_count', 1, false);
 
-            $countModel->isBigv($friend_uid);
+            $countModel->setBigv($friend_uid);
         }
 
         return $status;

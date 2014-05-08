@@ -19,7 +19,7 @@ $config = new \Phalcon\Config(array(
         ),
     ),
     'setting' => array(
-        'cache_timeout_alg1'=>2592000, // a month
+        'cache_timeout_t1'=>2592000, // a month
         'big_v_level'=>300,
     ),
     'link_userstate' => array(
@@ -52,6 +52,18 @@ $config = new \Phalcon\Config(array(
         'username'=>'root',
         'password' => '123456',
         'dbname' => 'feedstate',
+
+        'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_read_port' => 9998,
+        'hs_write_port' => 9999,
+    ),
+    'link_mefeed'=>array(
+        'host' => '127.0.0.1',
+        'slave'=>array(),
+        'username'=>'root',
+        'password' => '123456',
+        'dbname' => 'mefeed',
 
         'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',

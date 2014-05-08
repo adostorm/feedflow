@@ -31,7 +31,10 @@ class FeedTask extends \Phalcon\CLI\Task {
                 $key = sprintf($cache_app_id_feeds, $newMessage['app_id']);
                 $redis->zadd($key, -$newMessage['create_at'], $oldMessage);
 
-                $model->push($newMessage['app_id'], $newMessage['author_id'], $feed_id, $newMessage['create_at']);
+                $model->push($newMessage['app_id'],
+                    $newMessage['author_id'],
+                    $feed_id,
+                    $newMessage['create_at']);
 
                 if($redis->zcard($key) > 1000) {
                     $redis->zremrangebyrank($key, 501, -1);

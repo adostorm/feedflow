@@ -37,7 +37,7 @@ class UserCountModel extends \HsMysql\Model {
             $counts = $this->field('uid,follow_count,fans_count,feed_count')->find($uid);
             if($counts) {
                 $this->redis->set($key, msgpack_pack($counts),
-                    \Util\ReadConfig::get('setting.cache_timeout_alg1', $this->getDi()));
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
             }
         } else {
             $counts = msgpack_unpack($counts);
@@ -89,18 +89,13 @@ class UserCountModel extends \HsMysql\Model {
         return $result;
     }
 
-    public function getBigVIds() {
-        $results = $this->redis->hgetall($this->cache_big_v_set);
-        $rets = array();
-        if($results) {
-            foreach($results as $id=>$fans_count) {
-                $rets[] = $id;
-            }
-        }
-        return $rets;
-    }
 
-    public function getBigVList() {
+    public function buildBigvCache() {
+        $keyExists = $this->redis->exists($this->cache_big_v_set);
+        if($keyExists) {
+           return ;
+        }
+
         $results = $this->field('uid,fans_count')->filter(array(
             array('fans_count','>=', $this->big_v_level),
         ))->limit(0, 2000)->find(0, '>');
@@ -112,43 +107,32 @@ class UserCountModel extends \HsMysql\Model {
             }
             $this->redis->exec();
         }
-
-        return $results;
     }
 
-    public function isBigv($uid) {
-        $fans_count = $this->redis->hget($this->cache_big_v_set, $uid);
-        if(!$fans_count) {
-            $results = $this->getCountByUid($uid);
-            if(isset($results['fans_count'])) {
-                $fans_count = $results['fans_count'];
-            }
-        }
-        $fans_count = intval($fans_count);
-
-        if($fans_count >= $this->big_v_level && !$this->redis->hExists($this->cache_big_v_set, $uid)) {
+    public function setBigv($uid) {
+        $status = false;
+        $this->buildBigvCache();
+        $fans_count = $this->getCountByField($uid, 'fans_count');
+        if($fans_count > $this->big_v_level) {
             $this->redis->hset($this->cache_big_v_set, $uid, $fans_count);
-        } else if($fans_count < $this->big_v_level && $this->redis->hExists($this->cache_big_v_set, $uid)) {
+            $status = true;
+        } else {
             $this->redis->hdel($this->cache_big_v_set, $uid);
         }
-        return $fans_count >= $this->big_v_level;
-    }
 
-    public function getBigVCount() {
-        $result = $this->redis->hlen($this->cache_big_v_set);
-        return intval($result);
+        return $status;
     }
 
     public function diffBigV($ids) {
         $tmp = array();
         if(!$ids) {
+            $this->buildBigvCache();
             $results = $this->redis->hmGet($this->cache_big_v_set, $ids);
-            if(!$results) {
-                $results = $this->getBigVList();
-            }
-            foreach($results as $k=>$v) {
-                if($v) {
-                    $tmp[] = $k;
+            if($results) {
+                foreach($results as $k=>$v) {
+                    if($v) {
+                        $tmp[] = $k;
+                    }
                 }
             }
         }

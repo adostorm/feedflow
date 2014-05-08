@@ -31,8 +31,6 @@ class Model
 
     public $dbname = '';
 
-    public $multi = false;
-
     public $filter = null;
 
     private $fields = '';
@@ -62,7 +60,8 @@ class Model
     }
 
     /**
-     * @param boolean $isAssociate
+     * @param $isAssociate
+     * @return $this
      */
     public function setIsAssociate($isAssociate)
     {
@@ -169,16 +168,11 @@ class Model
     {
         $this->_parsePartition($key);
         $this->_parseFilter();
-        $_fields = array();
-        $_values = array();
-        foreach ($data as $_field => $_value) {
-            $_fields[] = $_field;
-            $_values[] = $_value;
-        }
+        $pairs = $this->_parseFieldsAndValues($data);
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         try {
-            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $_fields, $this->indexFilter);
-            $result = $handlersocket->executeUpdate(self::UPDATE, $op, array($key), $_values, $this->limit, $this->offset, $this->whereFilter);
+            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
+            $result = $handlersocket->executeUpdate(self::UPDATE, $op, array($key), $pairs['values'], $this->limit, $this->offset, $this->whereFilter);
             if($result===false) {
                 var_dump($handlersocket->getError());
             }
@@ -190,18 +184,12 @@ class Model
 
     public function insert($data)
     {
-        $_fields = array();
-        $_values = array();
-        foreach ($data as $_field => $_value) {
-            $_fields[] = $_field;
-            $_values[] = $_value;
-        }
+        $pairs = $this->_parseFieldsAndValues($data);
         $this->_parsePartitionByInsert($data);
-
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         try {
-            $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $_fields);
-            $result = $handlersocket->executeInsert(self::INSERT, $_values);
+            $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $pairs['fields']);
+            $result = $handlersocket->executeInsert(self::INSERT, $pairs['values']);
             if($result===false) {
                 echo ($handlersocket->getError());
             }
@@ -229,26 +217,21 @@ class Model
     }
 
     public function increment($key, $data) {
-        return $this->_countuPdate($key, $data, '+');
+        return $this->_countUpdate($key, $data, '+');
     }
 
     public function decrement($key, $data) {
-        return $this->_countuPdate($key, $data, '-');
+        return $this->_countUpdate($key, $data, '-');
     }
 
-    private function _countuPdate($key, $data, $mode='+', $op='=') {
+    private function _countUpdate($key, $data, $mode='+', $op='=') {
         $this->_parseFilter();
-        $_fields = array();
-        $_values = array();
-        foreach ($data as $_field => $_value) {
-            $_fields[] = $_field;
-            $_values[] = $_value;
-        }
-        $this->field($_fields);
+        $pairs = $this->_parseFieldsAndValues($data);
+        $this->field($pairs['fields']);
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         try {
-            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $_fields, $this->indexFilter);
-            $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $_values, $this->whereFilter);
+            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
+            $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $pairs['values'], $this->whereFilter);
             if($result===false) {
                 echo ($handlersocket->getError());
             }
@@ -257,11 +240,6 @@ class Model
         }
         $result = $this->_parseData($result);
         return $result;
-    }
-
-    public function multi()
-    {
-
     }
 
     public function _parsePartitionByInsert($data) {
@@ -275,8 +253,8 @@ class Model
             if($this->partition['mode']=='mod') {
                 $ret = $id%$this->partition['step'];
                 $this->tbname .= '_'.$ret;
-            } else if($this->partition['mode']=='distance') {
-                foreach($this->partition['rule'] as $key=>$rule) {
+            } else if($this->partition['mode']=='range') {
+                foreach($this->partition['rules'] as $key=>$rule) {
                     if($id >= $rule[0] && $id <= $rule[1]) {
                         $this->tbname .= '_'.$key;
                     }
@@ -337,6 +315,19 @@ class Model
             return $string;
         }
         return $_pairs;
+    }
+
+    private function _parseFieldsAndValues($data) {
+        $_fields = array();
+        $_values = array();
+        foreach ($data as $_field => $_value) {
+            $_fields[] = $_field;
+            $_values[] = $_value;
+        }
+        return array(
+            'fields'=>$_fields,
+            'values'=>$_values,
+        );
     }
 
     public function getDebugSql()

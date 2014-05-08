@@ -101,14 +101,13 @@ class UserRelation extends \Phalcon\Mvc\Model
     public function initialize()
     {
         $this->setConnectionService('link_userstate');
-        $this->redis = \Util\RedisClient::getInstance($this->getDI());
     }
 
     public function getFollowList($uid, $offset=0, $limit=15)
     {
-        $models = UserRelation::find(array(
+        $models = $this->find(array(
+            'uid=:uid: and status in (0, 1)',
             'columns'=>'friend_uid',
-            "uid=:uid: and status in (0, 1)",
             'order'=>'create_at desc',
             'limit'=>array(
                 'number'=>$limit,
@@ -132,9 +131,9 @@ class UserRelation extends \Phalcon\Mvc\Model
 
     public function getFansList($uid, $offset=0, $limit=15)
     {
-        $models = UserRelation::find(array(
+        $models = $this->find(array(
+            'uid=:uid: and status in (1,2)',
             'columns'=>'friend_uid',
-            "uid=:uid: and status in (1,2)",
             'order'=>'create_at desc',
             'limit'=>array(
                 'number'=>$limit,
