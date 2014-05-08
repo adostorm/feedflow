@@ -27,8 +27,11 @@ class FeedModel extends \HsMysql\Model {
             'object_type'=> $model['object_type'],
             'object_id'=>(int) $model['object_id'],
             'author_id'=>(int) $model['author_id'],
+            'author'=>$model['author'],
             'centent'=> $model['centent'],
             'create_at'=>(int) $model['create_at'],
+            'attachment'=>$model['attachment'],
+            'extends'=>$model['extends'],
         ));
 
         if($feed_id) {
@@ -51,7 +54,11 @@ class FeedModel extends \HsMysql\Model {
         $result = $redis->get($key);
 
         if(false === $result) {
-            $result = $this->field('id,app_id,source_id,object_type,object_id,author_id,content,create_at')->find($feed_id);
+            $fields = array('id','app_id','source_id',
+                            'object_type','object_id',
+                            'author_id', 'author', 'content',
+                            'create_at','attachment','extends');
+            $result = $this->field($fields)->find($feed_id);
             if($result)  {
                 $redis->set($key, msgpack_pack($result),
                     \Util\ReadConfig::get('setting.cache_timeout_alg1', $this->getDi()));
@@ -63,11 +70,11 @@ class FeedModel extends \HsMysql\Model {
         return $result;
     }
 
-    public function push($app_id, $uid, $feed_id) {
+    public function push($app_id, $uid, $feed_id, $time) {
         $key = \Util\ReadConfig::get('queue_keys.pushfeeds', $this->getDi());
         $beans = \Util\BStalkClient::getInstance($this->getDi());
-        $beans->choose(stprinf($key, $uid%10));
-        $beans->put($app_id.'|'.$uid.'|'.$feed_id);
+        $beans->choose(stprinf($key, $feed_id%10));
+        $beans->put($app_id.'|'.$uid.'|'.$feed_id.'|'.$time);
         $beans->disconnect();
     }
 }

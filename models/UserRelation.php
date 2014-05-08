@@ -18,12 +18,6 @@ class UserRelation extends \Phalcon\Mvc\Model
 
     public $weight = 0;
 
-    public $cache_follow_key = '';
-
-    public $cache_fans_key = '';
-
-    public $redis = null;
-
     /**
      * @param int $create_at
      */
@@ -108,38 +102,28 @@ class UserRelation extends \Phalcon\Mvc\Model
     {
         $this->setConnectionService('link_userstate');
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
-        $this->cache_follow_key = \Util\ReadConfig::get('redis_cache_keys.follow_uid_list', $this->getDI());
-        $this->cache_fans_key = \Util\ReadConfig::get('redis_cache_keys.fans_uid_list', $this->getDI());
     }
 
     public function getFollowList($uid, $offset=0, $limit=15)
     {
-        $key = sprintf($this->cache_follow_key, $uid);
-        $redis = \Util\RedisClient::getInstance($this->getDi());
-        $results = $redis->zrange($key, $limit, $offset);
+        $models = UserRelation::find(array(
+            'columns'=>'friend_uid',
+            "uid=:uid: and status in (0, 1)",
+            'order'=>'create_at desc',
+            'limit'=>array(
+                'number'=>$limit,
+                'offset'=>$offset,
+            ),
+            'bind'=>array(
+                'uid'=>$uid,
+            ),
+        ));
 
-        if(!$results) {
-            $models = UserRelation::find(array(
-                "uid=:uid: and status in (0, 1)",
-                'order'=>'create_at desc',
-                'limit'=>array(
-                    'number'=>$limit,
-                    'offset'=>$offset,
-                ),
-                'bind'=>array(
-                    'uid'=>$uid,
-                ),
-            ));
-
-            if($models->getFirst()) {
-                $this->redis->pipeline();
-                foreach($models as $model) {
-                    $this->redis->zadd($key, -$model->getCreateAt(), $model->friend_uid);
-                }
-                $this->redis->exec();
+        $results = array();
+        if($models->getFirst()) {
+            foreach($models as $model) {
+                $results[] = $model->friend_uid;
             }
-
-            $results = $redis->zrange($key, $limit, $offset);
         }
 
         return $results;
@@ -148,32 +132,31 @@ class UserRelation extends \Phalcon\Mvc\Model
 
     public function getFansList($uid, $offset=0, $limit=15)
     {
-        $key = sprintf($this->cache_fans_key, $uid);
-        $redis = \Util\RedisClient::getInstance($this->getDi());
-        $results = $redis->zrange($key, $limit, $offset);
+        $models = UserRelation::find(array(
+            'columns'=>'friend_uid',
+            "uid=:uid: and status in (1,2)",
+            'order'=>'create_at desc',
+            'limit'=>array(
+                'number'=>$limit,
+                'offset'=>$offset,
+            ),
+            'bind'=>array(
+                'uid'=>$uid,
+            ),
+        ));
 
-        if(!$results) {
-            $models = UserRelation::find(array(
-                "uid=:uid: and status in (1,2)",
-                'order'=>'create_at desc',
-                'limit'=>array(
-                    'number'=>$limit,
-                    'offset'=>$offset,
-                ),
-                'bind'=>array(
-                    'uid'=>$uid,
-                ),
-            ));
-
-            $results = array();
-            if($models->getFirst()) {
-                foreach($models as $model) {
-                    $this->redis->zadd($key, -$model->getCreateAt(), $model->friend_uid);
-                    $results[] = $model->friend_uid;
-                }
+        $results = array();
+        if($models->getFirst()) {
+            foreach($models as $model) {
+                $results[] = $model->friend_uid;
             }
         }
 
         return $results;
+    }
+
+    public function getInRelationList()
+    {
+
     }
 }

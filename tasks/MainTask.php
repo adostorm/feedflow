@@ -7,15 +7,8 @@
 
 class MainTask extends \Phalcon\CLI\Task {
 
-    public function test0Action() {
-        $u = new UserRelationModel($this->getDI());
-//        $result = $u->field('uid,friend_uid')->find(3);
-//        var_dump($result);
-
-        $u->insert(array(
-            'uid'=>1,
-            'friend_uid'=>3,
-        ));
+    public function test0Action($num) {
+       var_dump($num[0]);
     }
 
     public function test1Action() {

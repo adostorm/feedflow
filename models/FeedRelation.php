@@ -15,11 +15,7 @@ class FeedRelation extends CCommonModel {
 
     public $weight = 0;
 
-    public $cache_app_id_feeds = '';
-
     public $cache_friend_appid_id_feeds = '';
-
-    public $cache_me_appid_id_feeds = '';
 
     public $cache_timeline = 0;
 
@@ -93,9 +89,7 @@ class FeedRelation extends CCommonModel {
     public function initialize()
     {
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
-        $this->cache_app_id_feeds = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $this->getDI());
         $this->cache_friend_appid_id_feeds = \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds', $this->getDI());
-        $this->cache_me_appid_id_feeds = \Util\ReadConfig::get('redis_cache_keys.me_appid_id_feeds', $this->getDI());
         $this->cache_timeline = \Util\ReadConfig::get('redis_cache_keys.friend_id_feeds_timeline', $this->getDI());
         parent::initialize();
     }
@@ -103,70 +97,72 @@ class FeedRelation extends CCommonModel {
 
 
     public function getFollowFeedsByUid($app_id, $uid, $offset=0, $limit=15) {
-
-        $timeline_key = sprintf($this->cache_timeline, $app_id, $uid);
         $redis = \Util\RedisClient::getInstance($this->getDi());
-
-        $timeline = $this->redis->get($timeline_key);
-        if(!$timeline) {
-            $timeline = 0;
+        $key = sprintf($this->cache_friend_appid_id_feeds, $app_id, $uid);
+        $results = array();
+        if($offset==0) {
+            $results = $redis->zrange($key, $offset, $limit);
         }
 
-        $key = sprintf($this->cache_friend_appid_id_feeds, $uid);
-
-        $results = FeedRelation::find(array(
-            "uid=:uid: and app_id=:app_id: and create_at>:timeline:",
-            'order'=>'create_at desc',
-            'limit'=>array(
-                'number'=>200,
-                'offset'=>0,
-            ),
-            'bind'=>array(
-                'uid'=>$uid,
-                'app_id'=>$app_id,
-                'create_at'=>$timeline,
-            ),
-        ));
-
-        if($results) {
-            $element = end($results);
-            $this->redis->set($this->cache_timeline, $element['create_at']);
-            reset($results);
-        }
-
-        $userRelation = new UserRelationModel($this->getDI());
-        $userCount = new UserCountModel($this->getDI());
-
-        $bigvs = array();
-        $pageF = 1;
-        $offsetF = 0;
-        $countF = 1001;
-        while($follow_ids = $userRelation->getFollowList($uid, $offsetF, $countF)) {
-            $offsetF = ($pageF - 1) * $countF - 1;
-
-            $bigvs = array_merge($bigvs, $userCount->diffBigV($follow_ids));
-
-            if(count($follow_ids) <= $countF) {
-                break;
+        if(!$results) {
+            $timeline_key = sprintf($this->cache_timeline, $app_id, $uid);
+            $timeline = $this->redis->get($timeline_key);
+            if(!$timeline) {
+                $timeline = 0;
             }
-        }
+            $models = FeedRelation::find(array(
+                "uid=:uid: and app_id=:app_id: and create_at>:timeline:",
+                'order'=>'create_at desc',
+                'limit'=>array(
+                    'number'=>200,
+                    'offset'=>0,
+                ),
+                'bind'=>array(
+                    'uid'=>$uid,
+                    'app_id'=>$app_id,
+                    'create_at'=>$timeline,
+                ),
+            ));
+            if($last = $models->getLast()) {
+                $this->redis->set($this->cache_timeline, $last['create_at']);
+                $this->redis->pipeline();
+                foreach($models as $model) {
+                    $this->redis->zadd($key, -$model->create_at, msgpack_pack($model->toArray()));
+                }
+                $this->redis->exec();
+            }
+            $userRelation = new UserRelationModel($this->getDI());
+            $userCount = new UserCountModel($this->getDI());
+            $bigvs = array();
+            $pageF = 1;
+            $offsetF = 0;
+            $countF = 1001;
+            while($follow_ids = $userRelation->getFollowList($uid, $offsetF, $countF)) {
+                $offsetF = ($pageF - 1) * $countF - 1;
 
-        if($bigvs) {
-            foreach($bigvs as $k=>$v) {
-                if($v) {
-                    $bigFriendFeeds = $this->redis->zrange(sprintf($this->cache_me_appid_id_feeds, $k), 0, 20);
-                    $this->redis->pipeline();
-                    foreach($bigFriendFeeds as $feed) {
-                        $this->redis->zadd($key, -$feed['create_at'], $feed);
-                    }
-                    $this->redis->exec();
+                $bigvs = array_merge($bigvs, $userCount->diffBigV($follow_ids));
+
+                if(count($follow_ids) <= $countF) {
+                    break;
                 }
             }
+
+            if($bigvs) {
+                foreach($bigvs as $k=>$v) {
+                    if($v) {
+                        $bigFriendFeeds = $this->redis->zrange(sprintf($this->cache_me_appid_id_feeds, $k), 0, 20);
+                        $this->redis->pipeline();
+                        foreach($bigFriendFeeds as $feed) {
+                            $this->redis->zadd($key, -$feed['create_at'], $feed);
+                        }
+                        $this->redis->exec();
+                    }
+                }
+            }
+
+            $results = $redis->zrange($key, $offset, $limit);
         }
 
-        //如果大于500条，裁剪掉
-
-        $results = $redis->zrange($key, $offset, $limit);
         return $results;
     }
 

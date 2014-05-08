@@ -89,11 +89,6 @@ class UserCountModel extends \HsMysql\Model {
         return $result;
     }
 
-
-    public function checkUserCount($uid) {
-        return $this->field('uid')->find($uid);
-    }
-
     public function getBigVIds() {
         $results = $this->redis->hgetall($this->cache_big_v_set);
         $rets = array();
@@ -110,26 +105,33 @@ class UserCountModel extends \HsMysql\Model {
             array('fans_count','>=', $this->big_v_level),
         ))->limit(0, 2000)->find(0, '>');
 
-        $this->redis->pipeline();
-        foreach($results as $result) {
-            $this->redis->hset($this->cache_big_v_set, $result['uid'], $result['fans_count']);
+        if($results) {
+            $this->redis->pipeline();
+            foreach($results as $result) {
+                $this->redis->hset($this->cache_big_v_set, $result['uid'], $result['fans_count']);
+            }
+            $this->redis->exec();
         }
-
-        $this->redis->exec();
 
         return $results;
     }
 
     public function isBigv($uid) {
-        $result = $this->redis->hget($this->cache_big_v_set, $uid);
-        if(!$result) {
+        $fans_count = $this->redis->hget($this->cache_big_v_set, $uid);
+        if(!$fans_count) {
             $results = $this->getCountByUid($uid);
             if(isset($results['fans_count'])) {
-                $result = $results['fans_count'];
+                $fans_count = $results['fans_count'];
             }
         }
-        $result = intval($result);
-        return $result >= $this->big_v_level;
+        $fans_count = intval($fans_count);
+
+        if($fans_count >= $this->big_v_level && !$this->redis->hExists($this->cache_big_v_set, $uid)) {
+            $this->redis->hset($this->cache_big_v_set, $uid, $fans_count);
+        } else if($fans_count < $this->big_v_level && $this->redis->hExists($this->cache_big_v_set, $uid)) {
+            $this->redis->hdel($this->cache_big_v_set, $uid);
+        }
+        return $fans_count >= $this->big_v_level;
     }
 
     public function getBigVCount() {
@@ -140,8 +142,11 @@ class UserCountModel extends \HsMysql\Model {
     public function diffBigV($ids) {
         $tmp = array();
         if(!$ids) {
-            $result = $this->redis->hmGet($this->cache_big_v_set, $ids);
-            foreach($result as $k=>$v) {
+            $results = $this->redis->hmGet($this->cache_big_v_set, $ids);
+            if(!$results) {
+                $results = $this->getBigVList();
+            }
+            foreach($results as $k=>$v) {
                 if($v) {
                     $tmp[] = $k;
                 }

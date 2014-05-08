@@ -265,14 +265,8 @@ class Model
     }
 
     public function _parsePartitionByInsert($data) {
-        if($this->partition) {
-            if($this->partition['mode']=='mod') {
-                if(isset($data[$this->partition['field']])) {
-                    $ret = $data[$this->partition['field']]%$this->partition['step'];
-                    $this->tbname .= '_'.$ret;
-                }
-
-            }
+        if(isset($this->partition['field']) && isset($data[$this->partition['field']])) {
+            $this->_parsePartition($data[$this->partition['field']]);
         }
     }
 
@@ -281,6 +275,12 @@ class Model
             if($this->partition['mode']=='mod') {
                 $ret = $id%$this->partition['step'];
                 $this->tbname .= '_'.$ret;
+            } else if($this->partition['mode']=='distance') {
+                foreach($this->partition['rule'] as $key=>$rule) {
+                    if($id >= $rule[0] && $id <= $rule[1]) {
+                        $this->tbname .= '_'.$key;
+                    }
+                }
             }
         }
     }
