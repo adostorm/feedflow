@@ -21,31 +21,37 @@ class FeedModel extends \HsMysql\Model {
             \Util\ReadConfig::get('redis_cache_keys.feed_id_content', $this->getDi());
     }
 
-    public function create($model) {
-        $feed_id = $this->insert(array(
-            'app_id'=>(int) $model['app_id'],
-            'source_id'=>(int) $model['source_id'],
-            'object_type'=> $model['object_type'],
-            'object_id'=>(int) $model['object_id'],
-            'author_id'=>(int) $model['author_id'],
-            'author'=>$model['author'],
-            'centent'=> $model['centent'],
-            'create_at'=>(int) $model['create_at'],
-            'attachment'=>$model['attachment'],
-            'extends'=>$model['extends'],
+    public function create($data) {
+        $feedIndexModel = new FeedIndexModel($this->getDi());
+        $feed_id = $feedIndexModel->create();
+
+        $isOk = $this->insert(array(
+            'feed_id'=>$feed_id,
+            'app_id'=>(int) $data['app_id'],
+            'source_id'=>(int) $data['source_id'],
+            'object_type'=> $data['object_type'],
+            'object_id'=>(int) $data['object_id'],
+            'author_id'=>(int) $data['author_id'],
+            'author'=>$data['author'],
+            'centent'=> $data['centent'],
+            'create_at'=>(int) $data['create_at'],
+            'attachment'=>$data['attachment'],
+            'extends'=>$data['extends'],
         ));
 
-        if($feed_id) {
+        if($isOk) {
             $count = new UserCountModel($this->getDi());
-            $count->updateCount($model['author_id'], 'feed_count', 1, true);
+            $count->updateCount($data['author_id'], 'feed_count', 1, true);
 
             $key = sprintf($this->cache_key, $feed_id);
             $redis = \Util\RedisClient::getInstance($this->getDi());
-            $redis->set($key, msgpack_pack($model),
+            $redis->set($key, msgpack_pack($data),
                 \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+
+            return $feed_id;
         }
 
-        return $feed_id;
+        return false;
     }
 
     public function getById($feed_id) {

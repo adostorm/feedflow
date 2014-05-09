@@ -21,20 +21,24 @@ final class RedisClient
 
     private $isConnected = false;
 
-    private static $redis = null;
+    private $redis = null;
+
+    private static $instance = null;
 
     private function __construct() {}
     private function __clone(){}
 
     public static function getInstance($di) {
-        if(null === self::$redis) {
-            self::$redis = new self;
-            self::$redis->host = ReadConfig::get('redis_connect.host', $di);
-            self::$redis->port = ReadConfig::get('redis_connect.port', $di);
-            self::$redis->password = ReadConfig::get('redis_connect.password', $di);
-            self::$redis->_init();
+        if(null === self::$instance) {
+            $_instance = new self;
+            $_instance->host = ReadConfig::get('redis_connect.host', $di);
+            $_instance->port = ReadConfig::get('redis_connect.port', $di);
+            $_instance->password = ReadConfig::get('redis_connect.password', $di);
+            $_instance->_init();
+            self::$instance = $_instance;
+            unset($_instance);
         }
-        return self::$redis;
+        return self::$instance;
     }
 
     /**
@@ -56,16 +60,14 @@ final class RedisClient
             $this->isConnected = true;
         } catch(Exception $e) {
             echo $e->getMessage();
+            exit;
         }
     }
+
 
     public function __call($name, $arguments) {
-        if(!method_exists($this->redis, $name)) {
-            throw new Exception(sprintf('class "%s" does not have a method "%s" in %s on line %s',
-                'Redis', $name, __FILE__, __LINE__));
-        }
+        if(method_exists($this->redis, $name)) {
             return call_user_func_array(array($this->redis, $name), $arguments);
-
+        }
     }
-
 }
