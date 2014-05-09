@@ -17,9 +17,8 @@ class UserRelationModel extends \HsMysql\Model
     public $partition = array(
         'field'=>'uid',
         'mode'=>'range',
-        'rules'=>array(
-            1=>array(1, 2),
-        ),
+        'step'=>array(1,100000,200000,300000,400000,500000,600000,1000000000),
+        'limit'=>399
     );
 
     public $redis = null;

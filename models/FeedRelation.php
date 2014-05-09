@@ -5,7 +5,7 @@
  * Time: 下午6:03
  */
 
-class FeedRelation extends \Phalcon\Mvc\Model
+class FeedRelation extends AdvModel
 {
 
     public $uid = 0;
@@ -21,6 +21,8 @@ class FeedRelation extends \Phalcon\Mvc\Model
     public $cache_timeline = 0;
 
     public $redis = null;
+
+
 
     /**
      * @param int $feed_id
@@ -89,18 +91,23 @@ class FeedRelation extends \Phalcon\Mvc\Model
 
     public function initialize()
     {
+
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
         $this->cache_friend_appid_id_feeds =
             \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds', $this->getDI());
         $this->cache_timeline =
             \Util\ReadConfig::get('redis_cache_keys.friend_id_feeds_timeline', $this->getDI());
-        parent::initialize();
+    }
+
+
+    public function getFollowFeedsCount($app_id, $uid) {
+        $key = sprintf($this->cache_friend_appid_id_feeds, $app_id, $uid);
+        return $this->redis->zcard($key);
     }
 
 
     public function getFollowFeedsByUid($app_id, $uid, $offset = 0, $limit = 15)
     {
-        $redis = \Util\RedisClient::getInstance($this->getDi());
         $key = sprintf($this->cache_friend_appid_id_feeds, $app_id, $uid);
 
         $timeline_key = sprintf($this->cache_timeline, $app_id, $uid);
@@ -109,11 +116,12 @@ class FeedRelation extends \Phalcon\Mvc\Model
             $timeline = 0;
         }
 
-        $diffSec = time() - $timeline;
-        if ($offset == 0 && $diffSec > 60) {
+        $expire = \Util\ReadConfig::get('setting.cache_timeout_t2', $this->getDI());
+        if ($offset == 0 && ((time() - $timeline) > $expire)) {
+            $this->init($uid);
             $this->redis->delete($key);
-            $meFeedModel = new Feed();
-            $models = $meFeedModel->find(array(
+            $userFeed = new UserFeed();
+            $models = $userFeed->find(array(
                 "uid=:uid: and app_id=:app_id: and create_at>:timeline:",
                 'order' => 'create_at desc',
                 'limit' => array(
@@ -128,7 +136,7 @@ class FeedRelation extends \Phalcon\Mvc\Model
             ));
 
             if ($last = $models->getLast()) {
-                $this->redis->set($this->cache_timeline, $last['create_at']);
+                $this->redis->set($this->cache_timeline, $last->create_at);
                 $this->redis->pipeline();
                 foreach ($models as $model) {
                     $this->redis->zadd($key, -$model->create_at
@@ -147,7 +155,7 @@ class FeedRelation extends \Phalcon\Mvc\Model
             while ($follow_ids = $userRelation->getFollowList($uid, $offsetF, $countF)) {
                 $offsetF = ($pageF - 1) * $countF - 1;
 
-                $bigvs = array_merge($bigvs, $userCount->diffBigV($follow_ids));
+                $bigvs = array_merge($bigvs, $userCount->diffBigv($follow_ids));
 
                 if (count($follow_ids) <= $countF) {
                     break;
@@ -157,35 +165,33 @@ class FeedRelation extends \Phalcon\Mvc\Model
             if (is_array($bigvs) && $bigvs) {
                 $bigvs = array_unique($bigvs);
 
-                foreach ($bigvs as $k => $v) {
-                    if ($v) {
-                        $bigFriendFeeds = $meFeedModel->getListByAppIdAndUid($app_id, $k, array(
-                            'offset' => 0,
-                            'limit' => 20,
-                            'timeline' => $timeline,
-                            'fields' => 'app_id,uid,feed_id,creat_at',
-                            'order' => 'create_at desc'
-                        ));
+                foreach ($bigvs as $_uid) {
+                    $bigFriendFeeds = $userFeed->getListByAppIdAndUid($app_id, $_uid, array(
+                        'offset' => 0,
+                        'limit' => 20,
+                        'timeline' => $timeline,
+                        'fields' => 'app_id,uid,feed_id,creat_at',
+                        'order' => 'create_at desc'
+                    ));
 
-                        if ($bigFriendFeeds->getFirst()) {
-                            $this->redis->pipeline();
-                            foreach ($bigFriendFeeds as $_feed) {
-                                $this->redis->zadd($key, -$_feed->creat_at
-                                    , msgpack_pack($_feed->toArray()));
-                            }
-                            $this->redis->exec();
+                    if ($bigFriendFeeds->getFirst()) {
+                        $this->redis->pipeline();
+                        foreach ($bigFriendFeeds as $_feed) {
+                            $this->redis->zadd($key, -$_feed->creat_at
+                                , msgpack_pack($_feed->toArray()));
                         }
+                        $this->redis->exec();
                     }
                 }
 
-                if($redis->zcard($key) > 200) {
-                    $redis->zremrangebyrank($key, 201, -1);
+                if($this->redis->zcard($key) > 200) {
+                    $this->redis->zremrangebyrank($key, 201, -1);
                 }
             }
 
         }
 
-        $results = $redis->zrange($key, $offset, $limit);
+        $results = $this->redis->zrange($key, $offset, $limit);
 
         return $results ? $results : array();
     }

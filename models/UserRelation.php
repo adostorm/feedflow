@@ -5,7 +5,7 @@
  * Time: 上午11:28
  */
 
-class UserRelation extends \Phalcon\Mvc\Model
+class UserRelation extends AdvModel
 {
 
     public $uid = 0;
@@ -17,6 +17,17 @@ class UserRelation extends \Phalcon\Mvc\Model
     public $create_at = 0;
 
     public $weight = 0;
+
+    public $tbname = 'user_relation';
+
+    public $dbname = 'userstate';
+
+    public $partition = array(
+        'field'=>'uid',
+        'mode'=>'range',
+        'step'=>array(1,100000,200000,300000,400000,500000,600000,1000000000),
+        'limit'=>399
+    );
 
     /**
      * @param int $create_at
@@ -100,11 +111,12 @@ class UserRelation extends \Phalcon\Mvc\Model
 
     public function initialize()
     {
-        $this->setConnectionService('link_userstate');
+//        $this->setConnectionService('link_userstate');
     }
 
     public function getFollowList($uid, $offset=0, $limit=15)
     {
+        $this->init($uid);
         $models = $this->find(array(
             'uid=:uid: and status in (0, 1)',
             'columns'=>'friend_uid',
@@ -131,6 +143,7 @@ class UserRelation extends \Phalcon\Mvc\Model
 
     public function getFansList($uid, $offset=0, $limit=15)
     {
+        $this->init($uid);
         $models = $this->find(array(
             'uid=:uid: and status in (1,2)',
             'columns'=>'friend_uid',

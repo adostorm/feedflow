@@ -83,6 +83,7 @@ class UserFeed extends \Phalcon\Mvc\Model
 
     public function getListByAppIdAndUid($app_id, $uid, $extends = array())
     {
+        $this->init($uid);
         $default = array(
             'offset' => 0,
             'limit' => 15,

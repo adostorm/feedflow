@@ -123,7 +123,7 @@ class UserCountModel extends \HsMysql\Model {
         return $status;
     }
 
-    public function diffBigV($ids) {
+    public function diffBigv($ids) {
         $tmp = array();
         if(!$ids) {
             $this->buildBigvCache();

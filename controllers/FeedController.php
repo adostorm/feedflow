@@ -18,17 +18,27 @@ class FeedController extends CController {
         $offset = ($page - 1) * $count;
         $limit = $count * $page - 1;
 
-        if($limit > 200) {
-            $limit = 200;
-            if($offset > 200) {
-                $offset = $limit - $count;
-            }
-        }
-
         $di = $this->getDI();
         $redis = \Util\RedisClient::getInstance($di);
-        $zaddKey = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
-        $results = $redis->zrange(sprintf($zaddKey, $app_id), $offset, $limit);
+        $key = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
+
+        $max = 200;
+
+        if($limit > $max) {
+            $total = $redis->zcard($key);
+            if($total > $max) {
+                $total = $max;
+            }
+            $modValue = $total % $count;
+            if($modValue == 0) {
+                $offset = $total - $count;
+            } else {
+                $offset = $total - $modValue;
+            }
+            $limit = $total - 1;
+        }
+
+        $results = $redis->zrange(sprintf($key, $app_id), $offset, $limit);
 
         $this->render($results);
     }
@@ -43,14 +53,7 @@ class FeedController extends CController {
         $count = $count > 0 && $count <= 50 ? $count : 15;
 
         $offset = ($page - 1) * $count;
-        $limit = $offset + $page - 1;
-
-        if($limit > 200) {
-            $limit = 200;
-            if($offset > 200) {
-                $offset = $limit - $count;
-            }
-        }
+        $limit = $count * $page - 1;
 
         $feedRelation = new FeedRelation();
         $result = $feedRelation->getFollowFeedsByUid($app_id, $uid, $offset, $limit);

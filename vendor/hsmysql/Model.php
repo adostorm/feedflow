@@ -254,10 +254,20 @@ class Model
                 $ret = $id%$this->partition['step'];
                 $this->tbname .= '_'.$ret;
             } else if($this->partition['mode']=='range') {
-                foreach($this->partition['rules'] as $key=>$rule) {
-                    if($id >= $rule[0] && $id <= $rule[1]) {
-                        $this->tbname .= '_'.$key;
+                $steps = $this->partition['step'];
+                $count = sizeof($steps);
+                $num = 0;
+                for($i=0;$i<$count;$i++) {
+                    if(($i+1) == $count) {//boundary
+                        $num = $i;
+                    } else if($id>=$steps[$i] && $id<$steps[$i+1]) {
+                        $num = $i;
+                        break;
                     }
+                }
+                $this->tbname .= '_'.$num;
+                if($num > $this->partition['limit']) {
+                    $this->dbname .= '_'.floor($num/$this->partition['limit']);
                 }
             }
         }

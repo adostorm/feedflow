@@ -8,7 +8,8 @@
 class MainTask extends \Phalcon\CLI\Task {
 
     public function test0Action() {
-
+        $user = new UserRelation();
+        $user->getFollowList(5000000, 1);
     }
 
 }

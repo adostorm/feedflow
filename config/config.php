@@ -20,6 +20,7 @@ $config = new \Phalcon\Config(array(
     ),
     'setting' => array(
         'cache_timeout_t1'=>2592000, // a month
+        'cache_timeout_t2'=>60,//friend feeds expire time and offset is zero
         'big_v_level'=>300,
     ),
     'link_userstate' => array(
