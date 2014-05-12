@@ -8,7 +8,7 @@
 class FeedRelationModel extends \HsMysql\Model
 {
 
-    public $dbname = 'feedstate';
+    public $dbname = 'db_feedstate';
 
     public $tbname = 'feed_relation';
 
@@ -17,7 +17,11 @@ class FeedRelationModel extends \HsMysql\Model
     public $partition = array(
         'field'=>'uid',
         'mode'=>'mod',
-        'step'=>100
+        'step'=>array(1,100000,200000,300000,400000,500000,
+            600000,700000,800000,900000,1000000,1100000,1200000,
+            1300000,1400000,1500000,1600000,1700000,1800000,1900000,
+            2000000,1000000000),
+        'limit'=>399
     );
 
     public $redis = null;

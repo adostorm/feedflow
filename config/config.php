@@ -23,48 +23,60 @@ $config = new \Phalcon\Config(array(
         'cache_timeout_t2'=>60,//friend feeds expire time and offset is zero
         'big_v_level'=>300,
     ),
-    'link_userstate' => array(
+    'link_db_countstate' => array(
         'host' => '127.0.0.1',
         'slave'=>array(),
         'username'=>'root',
         'password' => '123456',
-        'dbname' => 'userstate',
+        'dbname' => 'db_countstate',
 
         'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
     ),
-    'link_feed' => array(
+    'link_db_feedcontent' => array(
         'host' => '127.0.0.1',
         'slave'=>array(),
         'username'=>'root',
         'password' => '123456',
-        'dbname' => 'feed',
+        'dbname' => 'db_feedcontent',
 
         'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
     ),
-    'link_feedstate'=>array(
+    'link_db_feedstate'=>array(
         'host' => '127.0.0.1',
         'slave'=>array(),
         'username'=>'root',
         'password' => '123456',
-        'dbname' => 'feedstate',
+        'dbname' => 'db_feedstate',
 
         'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
     ),
-    'link_mefeed'=>array(
+    'link_db_userfeed'=>array(
         'host' => '127.0.0.1',
         'slave'=>array(),
         'username'=>'root',
         'password' => '123456',
-        'dbname' => 'mefeed',
+        'dbname' => 'db_userfeed',
+
+        'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_read_port' => 9998,
+        'hs_write_port' => 9999,
+    ),
+    'link_db_userstate'=>array(
+        'host' => '127.0.0.1',
+        'slave'=>array(),
+        'username'=>'root',
+        'password' => '123456',
+        'dbname' => 'db_userstate',
 
         'hs_read_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd'=>'5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
@@ -98,7 +110,7 @@ $config = new \Phalcon\Config(array(
 
     'queue_keys' => array(
         'allfeeds' => 'queue:allfeeds',
-        'pushfeeds' => 'queue:%id:feeds',
+        'pushfeeds' => 'queue:%d:feeds',
     ),
 
 ));

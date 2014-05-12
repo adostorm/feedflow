@@ -91,11 +91,13 @@ class Model
 
     private function _parseConfig($readOrWrite = self::WRITE_PORT)
     {
-        $config = array();
-        if (is_object($this->di)) {
-            $link = sprintf('link_%s', $this->dbname);
-            $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
+        static $cacheConfig = array();
 
+        $link = sprintf('link_%s', $this->dbname);
+        $key = $link.$readOrWrite;
+        if (is_object($this->di) && !isset($cacheConfig[$key])) {
+            $config = array();
+            $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
             $config['host'] = ReadConfig::get("{$link}.host", $this->di);
             $slave = ReadConfig::get("{$link}.slave", $this->di)->toArray();
 
@@ -111,8 +113,10 @@ class Model
                 $config['port'] = ReadConfig::get("{$link}.hs_write_port", $this->di);
                 $config['password'] = ReadConfig::get("{$link}.hs_write_passwd", $this->di);
             }
+
+            $cacheConfig[$key] = $config;
         }
-        return $config;
+        return $cacheConfig[$key];
     }
 
     public function field($field)
@@ -145,11 +149,15 @@ class Model
         $this->isAssociate = $bool;
     }
 
-    public function find($key = '', $op = '=')
+    public function find($key = '', $op = '=', $changePartitionKey=0)
     {
         $this->_parseFilter();
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::READ_PORT));
-        $this->_parsePartition($key);
+        if($changePartitionKey) {
+            $this->_parsePartition($changePartitionKey);
+        } else {
+            $this->_parsePartition($key);
+        }
         try {
             $handlersocket = $handler->initOpenIndex(self::SELECT, $this->tbname, $this->index, $this->fields, $this->indexFilter);
             $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter);
@@ -225,9 +233,9 @@ class Model
     }
 
     private function _countUpdate($key, $data, $mode='+', $op='=') {
+        $this->_parsePartition($key);
         $this->_parseFilter();
         $pairs = $this->_parseFieldsAndValues($data);
-        $this->field($pairs['fields']);
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         try {
             $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
@@ -249,7 +257,9 @@ class Model
     }
 
     public function _parsePartition($id) {
-        if(is_array($this->partition) && $this->partition) {
+        static $cacheTable = array();
+
+        if(!isset($cacheTable[$this->tbname]) && is_array($this->partition) && $this->partition) {
             if($this->partition['mode']=='mod') {
                 $ret = $id%$this->partition['step'];
                 $this->tbname .= '_'.$ret;
@@ -266,6 +276,9 @@ class Model
                     }
                 }
                 $this->tbname .= '_'.$num;
+
+                $cacheTable[$this->tbname] = $this->tbname;
+
                 if($num > $this->partition['limit']) {
                     $this->dbname .= '_'.floor($num/$this->partition['limit']);
                 }
@@ -328,15 +341,9 @@ class Model
     }
 
     private function _parseFieldsAndValues($data) {
-        $_fields = array();
-        $_values = array();
-        foreach ($data as $_field => $_value) {
-            $_fields[] = $_field;
-            $_values[] = $_value;
-        }
         return array(
-            'fields'=>$_fields,
-            'values'=>$_values,
+            'fields'=>array_keys($data),
+            'values'=>array_values($data),
         );
     }
 

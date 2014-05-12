@@ -7,7 +7,7 @@
 
 class UserCountModel extends \HsMysql\Model {
 
-    public $dbname = 'userstate';
+    public $dbname = 'db_countstate';
 
     public $tbname = 'user_count';
 
@@ -20,6 +20,15 @@ class UserCountModel extends \HsMysql\Model {
     public $cache_big_v_set  = '';
 
     public $big_v_level = '';
+
+    public $partition = array(
+        'field'=>'uid',
+        'mode'=>'range',
+        'step'=>array(1,1000000,2000000,3000000,4000000,5000000,
+            6000000,7000000,8000000,9000000,10000000,11000000,12000000,
+            13000000,14000000,15000000,16000000,17000000,1000000000),
+        'limit'=>399
+    );
 
     public function __construct($di) {
         parent::__construct($di, '');
@@ -48,8 +57,8 @@ class UserCountModel extends \HsMysql\Model {
 
     public function getCountByField($uid, $field) {
         $count = $this->getCountByUid($uid);
-        if(isset($count[$field])) {
-            return (int) $count[$field];
+        if(isset($count[0]) && isset($count[0][$field])) {
+            return (int) $count[0][$field];
         }
         return 0;
     }
@@ -57,9 +66,8 @@ class UserCountModel extends \HsMysql\Model {
     public function updateCount($uid, $field, $num=0, $incr=true) {
         $updates = array();
         if(is_string($field)) {
-            $updates[$field] = $num;
+            $updates[$field] = intval($num);
         }
-
         if(true === $incr) {
             $result = $this->increment($uid, $updates);
         } else if(false === $incr) {
@@ -68,7 +76,7 @@ class UserCountModel extends \HsMysql\Model {
 
         if(0 === $result) {
             $defalut = array(
-                'uid'=>$uid,
+                'uid'=> (int) $uid,
                 'follow_count'=>0,
                 'fans_count'=>0,
                 'feed_count'=>0,
@@ -96,9 +104,10 @@ class UserCountModel extends \HsMysql\Model {
            return ;
         }
 
+        //还要修改
         $results = $this->field('uid,fans_count')->filter(array(
             array('fans_count','>=', $this->big_v_level),
-        ))->limit(0, 2000)->find(0, '>');
+        ))->limit(0, 2000)->find(0, '>', 1);
 
         if($results) {
             $this->redis->pipeline();

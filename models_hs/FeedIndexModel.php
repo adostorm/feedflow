@@ -7,7 +7,7 @@
 
 class FeedIndexModel extends \HsMysql\Model {
 
-    public $dbname = 'feed';
+    public $dbname = 'db_countstate';
 
     public $tbname = 'feed_index';
 

@@ -15,9 +15,21 @@ $app->notFound(function () use ($app) {
 });
 
 $feedController = new FeedController();
+/**
+ * test case :
+ * curl -d "app_id=1&source_id=1&type=1&type_id=121212&author_id=1231&author=塑料袋&content=aaaaaaaaaa&create_time=12121231" http://feed.api.mama.com/feed/create
+ */
 $app->post('/feed/create', array($feedController, 'create'));
-$app->get('/statuses/public_timeline', array($feedController, 'getFeedByAppId'));
-$app->get('/statuses/friends_timeline', array($feedController, 'getFeedByUid'));
+
+/**
+ * curl -i -X GET http://feed.api.mama.com/statuses/public_timeline?app_id=1
+ */
+$app->get('/statuses/public_timeline', array($feedController, 'getFeedListByAppId'));
+
+/**
+ * curl -i -X GET http://feed.api.mama.com/statuses/friends_timeline?app_id=1
+ */
+$app->get('/statuses/friends_timeline', array($feedController, 'getFeedListByUid'));
 
 $userController = new UserController();
 $app->post('/friendships/create', array($userController, 'addFollow'));

@@ -24,28 +24,30 @@ class PushTask extends \Phalcon\CLI\Task {
         $bigv_key = \Util\ReadConfig::get('setting.big_v_level', $this->getDI());
 
         while(($job = $queue->peekReady()) !== false) {
+
             $data = $job->getBody();
+
+$data = '1|1231|203|12121231';
             list($app_id, $uid, $feed_id, $time) = explode('|', $data);
 
             if($countRelation->setBigv($uid)) {
                 $job->delete();
                 continue;
             }
-
             $results = $userRelation->getFansList($uid, 0, $bigv_key);
 
             if($results) {
                 foreach($results as $result) {
                     $feedRelation->create(array(
                         'app_id'=>$app_id,
-                        'uid'=>$result['friend_id'],
+                        'uid'=>$result['friend_uid'],
                         'feed_id'=>$feed_id,
                         'create_at'=>$time,
                     ));
                 }
             }
-
-            $job->delete();
+            exit;
+//            $job->delete();
         }
     }
 }
