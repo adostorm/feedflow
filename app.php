@@ -22,19 +22,34 @@ $feedController = new FeedController();
 $app->post('/feed/create', array($feedController, 'create'));
 
 /**
- * curl -i -X GET http://feed.api.mama.com/statuses/public_timeline?app_id=1
+ * curl -i -X GET 'http://feed.api.mama.com/statuses/public_timeline?app_id=1'
  */
 $app->get('/statuses/public_timeline', array($feedController, 'getFeedListByAppId'));
 
 /**
- * curl -i -X GET http://feed.api.mama.com/statuses/friends_timeline?app_id=1
+ * curl -i -X GET 'http://feed.api.mama.com/statuses/friends_timeline?app_id=1&uid=1'
  */
 $app->get('/statuses/friends_timeline', array($feedController, 'getFeedListByUid'));
 
 $userController = new UserController();
+
+/**
+ * curl -d "uid=1&friend_uid=2" 'http://feed.api.mama.com/friendships/create'
+ * curl -d "uid=2&friend_uid=1" 'http://feed.api.mama.com/friendships/create'
+ */
 $app->post('/friendships/create', array($userController, 'addFollow'));
+
+/**
+ * curl -d "uid=1&friend_uid=2" 'http://feed.api.mama.com/friendships/destroy'
+ */
 $app->post('/friendships/destroy', array($userController, 'unFollow'));
+
+/**
+ * curl -i -X GET 'http://feed.api.mama.com/friendships/followers?uid=1'
+ */
 $app->get('/friendships/followers', array($userController, 'getFansList'));
+
+/**
+ * curl -i -X GET 'http://feed.api.mama.com/friendships/friends?uid=2'
+ */
 $app->get('/friendships/friends', array($userController, 'getFollowList'));
-
-

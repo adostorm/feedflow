@@ -35,30 +35,40 @@ class FeedModel extends \HsMysql\Model {
         $feedIndexModel = new FeedIndexModel($this->getDi());
         $feed_id = $feedIndexModel->create();
 
-        $isOk = $this->insert(array(
-            'feed_id'=> $feed_id,
-            'app_id'=>(int) $data['app_id'],
-            'source_id'=>(int) $data['source_id'],
-            'object_type'=> (int)$data['object_type'],
-            'object_id'=>(int) $data['object_id'],
-            'author_id'=>(int) $data['author_id'],
-            'author'=>strval($data['author']),
-            'content'=> strval($data['content']),
-            'create_at'=>(int) $data['create_at'],
-            'attachment'=>strval($data['attachment']),
-            'extends'=>strval($data['extends']),
-        ));
+        if($feed_id) {
+            $userFeedModel = new UserFeedModel($this->getDi());
+            $isSuccess = $userFeedModel->create(array(
+                'app_id'=>$data['app_id'],
+                'uid'=>$data['author_id'],
+                'feed_id'=>$feed_id,
+                'create_at'=>$data['create_at'],
+            ));
 
-        if($isOk) {
-            $count = new UserCountModel($this->getDi());
-            $count->updateCount($data['author_id'], 'feed_count', 1, true);
+            $isOk = $this->insert(array(
+                'feed_id'=> $feed_id,
+                'app_id'=>(int) $data['app_id'],
+                'source_id'=>(int) $data['source_id'],
+                'object_type'=> (int)$data['object_type'],
+                'object_id'=>(int) $data['object_id'],
+                'author_id'=>(int) $data['author_id'],
+                'author'=>strval($data['author']),
+                'content'=> strval($data['content']),
+                'create_at'=>(int) $data['create_at'],
+                'attachment'=>strval($data['attachment']),
+                'extends'=>strval($data['extends']),
+            ));
 
-            $key = sprintf($this->cache_key, $feed_id);
-            $redis = \Util\RedisClient::getInstance($this->getDi());
-            $redis->set($key, msgpack_pack($data),
-                \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+            if($isOk&&$isSuccess) {
+                $count = new UserCountModel($this->getDi());
+                $count->updateCount($data['author_id'], 'feed_count', 1, true);
 
-            return $feed_id;
+                $key = sprintf($this->cache_key, $feed_id);
+                $redis = \Util\RedisClient::getInstance($this->getDi());
+                $redis->set($key, msgpack_pack($data),
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+
+                return $feed_id;
+            }
         }
 
         return false;
@@ -71,11 +81,12 @@ class FeedModel extends \HsMysql\Model {
         $result = $redis->get($key);
 
         if(false === $result) {
-            $fields = array('id','app_id','source_id',
+            $fields = array('feed_id','app_id','source_id',
                             'object_type','object_id',
                             'author_id', 'author', 'content',
                             'create_at','attachment','extends');
             $result = $this->field($fields)->find($feed_id);
+
             if($result)  {
                 $redis->set($key, msgpack_pack($result),
                     \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
@@ -89,7 +100,7 @@ class FeedModel extends \HsMysql\Model {
 
     public function push($app_id, $uid, $feed_id, $time) {
         $key = \Util\ReadConfig::get('queue_keys.pushfeeds', $this->getDi());
-        $beans = \Util\BStalkClient::getInstance($this->getDi());
+        $beans = \Util\BStalkClient::getInstance($this->getDi(), 'link_queue1');
         $beans->choose(sprintf($key, $feed_id%10));
         $beans->watch(sprintf($key, $feed_id%10));
         $beans->put($app_id.'|'.$uid.'|'.$feed_id.'|'.$time);

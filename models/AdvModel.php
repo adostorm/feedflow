@@ -20,7 +20,9 @@ class AdvModel extends \Phalcon\Mvc\Model {
     }
 
     private function _parsePartition($id) {
-        if(is_array($this->partition) && $this->partition) {
+        static $cachePhTables = array();
+
+        if(!isset($cachePhTables[$this->tbname]) && is_array($this->partition) && $this->partition) {
             if($this->partition['mode']=='mod') {
                 $ret = $id%$this->partition['step'];
                 $this->tbname .= '_'.$ret;
@@ -37,6 +39,9 @@ class AdvModel extends \Phalcon\Mvc\Model {
                     }
                 }
                 $this->tbname .= '_'.$num;
+
+                $cachePhTables[$this->tbname] = $this->tbname;
+
                 if($num > $this->partition['limit']) {
                     $this->dbname = sprintf('link_%s_%d', $this->dbname, $num/$this->partition['limit']);
                 } else {

@@ -15,7 +15,11 @@ $config = new \Phalcon\Config(array(
     'beanstalk' => array(
         'link_queue0' => array(
             'host' => '127.0.0.1',
-            'port' => 11307,
+            'port' => 11980,
+        ),
+        'link_queue1' => array(
+            'host' => '127.0.0.1',
+            'port' => 11981,
         ),
     ),
     'setting' => array(
@@ -93,6 +97,7 @@ $config = new \Phalcon\Config(array(
     'redis_cache_keys' => array(
         'app_id_feeds' => 'cache:app:%d:feeds',
         'friend_appid_id_feeds' => 'cache:app:%d:friend:%d:feeds',
+        'friend_appid_id_feeds_timeline'=>'cache:app:%d:friend:%d:timeline',
         'me_appid_id_feeds'=>'cache:app:%d:me:%d:feeds',
         'user_id_counts' => 'cache:user:%d:counts',
         'feed_id_content'=>'cache:feed:%d:content',
@@ -100,7 +105,6 @@ $config = new \Phalcon\Config(array(
         'fans_uid_list'=>'cache:fans:%d:list',
         'feed_uid_push'=>'cache:feed:%d:push',
         'big_v_set'=> 'cache:big_v_set',
-        'friend_appid_id_feeds_timeline'=>'cache:feeds:%d:timeline'
     ),
 
     'queue_connect' => array(

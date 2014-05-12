@@ -24,6 +24,7 @@ $loader->registerDirs(
         APPLICATION_PATH . '/tasks',
         APPLICATION_PATH . '/models',
         APPLICATION_PATH . '/models_hs',
+        APPLICATION_PATH . '/vendor',
     )
 );
 

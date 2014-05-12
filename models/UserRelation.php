@@ -18,14 +18,17 @@ class UserRelation extends AdvModel
 
     public $weight = 0;
 
-    public $tbname = 'user_relation';
+    public $dbname = 'db_userstate';
 
-    public $dbname = 'userstate';
+    public $tbname = 'user_relation';
 
     public $partition = array(
         'field'=>'uid',
         'mode'=>'range',
-        'step'=>array(1,100000,200000,300000,400000,500000,600000,1000000000),
+        'step'=>array(1,100000,200000,300000,400000,500000,
+            600000,700000,800000,900000,1000000,1100000,1200000,
+            1300000,1400000,1500000,1600000,1700000,1800000,1900000,
+            2000000,1000000000),
         'limit'=>399
     );
 
@@ -107,11 +110,6 @@ class UserRelation extends AdvModel
     public function getWeight()
     {
         return (int)$this->weight;
-    }
-
-    public function initialize()
-    {
-//        $this->setConnectionService('link_userstate');
     }
 
     public function getFollowList($uid, $offset=0, $limit=15)

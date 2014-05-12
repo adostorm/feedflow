@@ -7,6 +7,9 @@
 
 class FeedTask extends \Phalcon\CLI\Task {
 
+    /**
+     * php cli.php Feed run
+     */
     public function runAction() {
         $this->_processQueue();
     }
@@ -15,7 +18,8 @@ class FeedTask extends \Phalcon\CLI\Task {
         $di = $this->getDI();
 
         $queue_key = \Util\ReadConfig::get('queue_keys.allfeeds', $di);
-        $queue = \Util\BStalkClient::getInstance($di);
+        $queue = \Util\BStalkClient::getInstance($di, 'link_queue0');
+        var_dump($queue);
         $queue->choose($queue_key);
         $queue->watch($queue_key);
 
@@ -24,9 +28,9 @@ class FeedTask extends \Phalcon\CLI\Task {
 
         $model = new FeedModel($this->getDI());
 
-        while(true) {
-            if(false !== $queue->peekReady()) {
-                $job = $queue->reserve();
+//        while(true) {
+            while (($job = $queue->peekReady()) !== false) {
+//                $job = $queue->reserve();
                 $message = $job->getBody();
                 $oldMessage = $message;
                 var_dump($message);
@@ -35,7 +39,6 @@ class FeedTask extends \Phalcon\CLI\Task {
 
                 if($feed_id > 0) {
                     $key = sprintf($cache_app_id_feeds, $newMessage['app_id']);
-                    $job->delete();
                     $redis->zadd($key, -$newMessage['create_at'], $oldMessage);
 
                     $model->push($newMessage['app_id'],
@@ -46,16 +49,15 @@ class FeedTask extends \Phalcon\CLI\Task {
                     if($redis->zcard($key) > 1000) {
                         $redis->zremrangebyrank($key, 501, -1);
                     }
-
                     $job->delete();
-
                 }
 
+                exit;
             }
 
-            exit;
+
 //            sleep(1);
-        }
+//        }
 
 
     }

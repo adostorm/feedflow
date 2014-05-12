@@ -55,6 +55,8 @@ class UserController extends CController {
 
         if(empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
+        } else if($uid < 0) {
+            throw new \Util\APIException(400, 2002, '用户ID不正确');
         }
 
         $page = $page > 0 ? $page : 1;

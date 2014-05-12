@@ -5,70 +5,166 @@
  * Time: 下午6:38
  */
 
+
+use Phalcon\Queue\Beanstalk as BBeanstalk;
+
 class MainTask extends \Phalcon\CLI\Task {
 
     public function test0Action() {
+        $f =  new FeedModel($this->getDI());
+        $d =  $f->getById(1);
+        var_dump($d,'----');
+    }
 
-        $a = new UserRelationModel($this->getDI());
-        $results = $a->getFansList(1,0,15);
-        var_dump($results);
-
-
-        exit;
-        $defaults = array(
-            'persistent' => true,
-            'host' => '127.0.0.1',
-            'port' => 11980,
-            'timeout' => 1
-        );
-        $bs = new \Util\BStalkd($defaults);
-var_dump($bs);
-
-        exit;
-        $count = new UserCountModel($this->getDi());
-        $count->updateCount(1, 'feed_count', 1, true);
+    public function test1Action() {
+        $bean = Beanstalk::init(); // returns BeanstalkPool instance
+        $bean->addServer('localhost', 11980);
+        $bean->useTube('my-tube');
+        $bean->put('Hello World!');
+    }
 
 
+    public function test2Action() {
+        $key1 = 'aaaaa';
+        $key2 = 'bbbbb';
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+        var_dump($beans);
+        $beans->choose($key1);
+        $beans->put('11111111');
 
-        exit;
-        $hs = new HandlerSocket('127.0.0.1', 9999);
 
-        $data = array(
-            'uid'=>time(),
-            'feed_count'=>1,
-        );
+        $beans->choose($key2);
+        $beans->put('2222');
 
-        $hs->openIndex(3, 'db_countstate', 'user_count_0', 'PRIMARY', array_keys($data));
-        $d  = $hs->executeSingle(3, '=', array(1), 1, 0, '+', array_values($data));
-        var_dump($d);
-        if($d ===0) {
-            $hs->openIndex(3, 'db_countstate', 'user_count_0', 'PRIMARY', array_keys($data));
-            $rs = $hs->executeInsert(3, array_values($data));
+        $beans->disconnect();
+
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+        var_dump($beans);
+
+        $beans->choose($key1);
+        $beans->watch($key1);
+        while ($beans->peekReady() !== false) {
+            $job = $beans->reserve();
+            $message = $job->getBody();
+            var_dump($message);
+            $job->delete();
         }
 
 
 
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+        var_dump($beans);
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+        var_dump($beans);
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+        var_dump($beans);
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+        var_dump($beans);
 
 
-//        for($i=0; $i<100; $i++) {
-//            $data = array(
-//                'uid'=>time() + $i,
-//                'feed_count'=>1,
-//            );
-//            $hs->openIndex(3, 'db_countstate', 'user_count_0', 'PRIMARY', array_keys($data));
-//            $rs = $hs->executeInsert(3, array_values($data));
-//            var_dump($rs, $hs->getError());
-//
-//
-//            $data = array(
-//                'id'=>time() + $i,
-//                'tid'=>1,
-//            );
-//            $hs->openIndex(3, 'test', 'feed', 'PRIMARY', array_keys($data));
-//            $rs = $hs->executeInsert(3, array_values($data));
-//            var_dump($rs, $hs->getError());
-//        }
+        exit;
 
+
+
+        $beans = new BBeanstalk(array(
+            'host'=>'127.0.0.1',
+            'port'=>11980
+        ));
+
+
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+        $beans->choose($key1);
+        $beans->put(msgpack_pack(array(
+            'id'=>1,
+            'tid'=>2,
+            'app_id'=>3,
+        )));
+
+        $beans->choose($key2);
+        $beans->put('ssssssssss');
+        $beans->disconnect();
+////////////////////////////////
+
+        $beans = new BBeanstalk(array(
+            'host'=>'127.0.0.1',
+            'port'=>11980
+        ));
+
+        var_dump($beans);
+        $beans = \Util\BStalkClient::getInstance($this->getDI());
+
+
+        var_dump($beans);
+        $beans->choose($key1);
+        $beans->watch($key1);
+        while ($beans->peekReady() !== false) {
+            $job = $beans->reserve();
+            $message = $job->getBody();
+            var_dump($message);
+            $job->delete();
+        }
+
+        $beans->choose($key2);
+        $beans->watch($key2);
+        while ($beans->peekReady() !== false) {
+            $job = $beans->reserve();
+            $message = $job->getBody();
+            var_dump($message);
+            $job->delete();
+        }
+
+        $beans->disconnect();
+
+        exit;
+
+
+        $queue = new \Phalcon\Queue\Beanstalk(array(
+            'host' => '127.0.0.1',
+            'port'=>'11980',
+        ));
+        $queue->choose('tube1:fff');
+        $r = $queue->put(array('processVideo' => 4871));
+        $queue->choose('tube2:11:FFF');
+        $r = $queue->put(array('1212' => 32423));
+        $queue->disconnect();
+
+
+
+
+
+
+
+        $queue = new \Phalcon\Queue\Beanstalk(array(
+            'host' => '127.0.0.1',
+            'port'=>'11980',
+        ));
+        $queue->choose('tube1:fff');
+        $queue->watch('tube1:fff');
+        while ($queue->peekReady() !== false) {
+            $job = $queue->reserve();
+
+            $message = $job->getBody();
+            // do something
+            var_dump($message);
+
+            $job->delete();
+        }
+
+
+
+        $queue->choose('tube2:11:FFF');
+        $queue->watch('tube2:11:FFF');
+        while ($queue->peekReady() !== false) {
+            $job = $queue->reserve();
+
+            $message = $job->getBody();
+            // do something
+            var_dump($message);
+
+            $job->delete();
+        }
+
+        $queue->disconnect();
     }
 
 }

@@ -7,16 +7,21 @@
 
 class PushTask extends \Phalcon\CLI\Task {
 
+    /**
+     * php cli.php Push run 1
+     * @param $num
+     */
     public function runAction($num) {
         $this->_processQueue($num[0]);
     }
 
     private function _processQueue($num) {
         $key = sprintf(\Util\ReadConfig::get('queue_keys.pushfeeds', $this->getDI()), $num);
-        $queue = \Util\BStalkClient::getInstance($this->getDI());
+
+        $queue = \Util\BStalkClient::getInstance($this->getDI(), 'link_queue1');
         $queue->choose($key);
         $queue->watch($key);
-
+        var_dump($queue);
         $userRelation = new UserRelationModel($this->getDI());
         $feedRelation = new FeedRelationModel($this->getDI());
         $countRelation =  new UserCountModel($this->getDI());
@@ -26,8 +31,8 @@ class PushTask extends \Phalcon\CLI\Task {
         while(($job = $queue->peekReady()) !== false) {
 
             $data = $job->getBody();
-
-$data = '1|1231|203|12121231';
+var_dump($data);
+//$data = '1|1231|203|12121231';
             list($app_id, $uid, $feed_id, $time) = explode('|', $data);
 
             if($countRelation->setBigv($uid)) {
@@ -46,8 +51,11 @@ $data = '1|1231|203|12121231';
                     ));
                 }
             }
+
+            $job->delete();
+
             exit;
-//            $job->delete();
+//
         }
     }
 }
