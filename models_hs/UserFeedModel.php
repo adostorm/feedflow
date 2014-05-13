@@ -7,12 +7,28 @@
 
 class UserFeedModel extends \HsMysql\Model {
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_userfeed';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname = 'user_feed';
 
+    /**
+     * 主键
+     * @var string
+     */
     public $index = 'idx0';
 
+    /**
+     * 分表规则
+     * @var array
+     */
     public $partition = array(
         'field'=>'uid',
         'mode'=>'range',
@@ -22,10 +38,19 @@ class UserFeedModel extends \HsMysql\Model {
         'limit'=>399
     );
 
+    /**
+     * 初始化
+     * @param $di
+     */
     public function __construct($di) {
         parent::__construct($di, '');
     }
 
+    /**
+     * 创建用户的Feed索引
+     * @param $data
+     * @return mixed
+     */
     public function create($data) {
         return $this->insert(array(
             'app_id'=>(int) $data['app_id'],

@@ -7,20 +7,51 @@
 
 class UserCountModel extends \HsMysql\Model {
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_countstate';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname = 'user_count';
 
+    /**
+     * 主键
+     * @var string
+     */
     public $index = 'PRIMARY';
 
+    /**
+     * Redis 对象
+     * @var null|Util\RedisClient
+     */
     private $redis = null;
 
+    /**
+     * 计数器缓存key
+     */
     private $counts_key = '';
 
+    /**
+     * 大V缓存Key
+     * @var string
+     */
     public $cache_big_v_set  = '';
 
+    /**
+     * 大V Level配置的值，当好友的粉丝大于这个值时，成为大V
+     * @var string
+     */
     public $big_v_level = '';
 
+    /**
+     * 分表规则
+     * @var array
+     */
     public $partition = array(
         'field'=>'uid',
         'mode'=>'range',
@@ -30,6 +61,10 @@ class UserCountModel extends \HsMysql\Model {
         'limit'=>399
     );
 
+    /**
+     * 初始化
+     * @param $di
+     */
     public function __construct($di) {
         parent::__construct($di, '');
         $this->redis = \Util\RedisClient::getInstance($di);
@@ -38,6 +73,11 @@ class UserCountModel extends \HsMysql\Model {
         $this->big_v_level = \Util\ReadConfig::get('setting.big_v_level', $this->getDi());
     }
 
+    /**
+     * 获取用户的计数器，并写入缓存
+     * @param $uid
+     * @return array
+     */
     public function getCountByUid($uid) {
         $key = sprintf($this->counts_key, $uid);
         $counts = $this->redis->get($key);
@@ -55,6 +95,12 @@ class UserCountModel extends \HsMysql\Model {
         return $counts;
     }
 
+    /**
+     * 根据Key获取计数器里面的数字
+     * @param $uid
+     * @param $field
+     * @return int
+     */
     public function getCountByField($uid, $field) {
         $count = $this->getCountByUid($uid);
         if(isset($count[0]) && isset($count[0][$field])) {
@@ -63,6 +109,14 @@ class UserCountModel extends \HsMysql\Model {
         return 0;
     }
 
+    /**
+     * 更新用户的计数器， 如果在数据库中不存在数据时，则创建，并清除缓存
+     * @param $uid
+     * @param $field
+     * @param int $num
+     * @param bool $incr
+     * @return array
+     */
     public function updateCount($uid, $field, $num=0, $incr=true) {
         $updates = array();
         if(is_string($field)) {
@@ -97,6 +151,12 @@ class UserCountModel extends \HsMysql\Model {
         return $result;
     }
 
+    /**
+     * 生成大V缓存，根据分表的规则，循环所有的表的计数器，
+     *  然后比较 粉丝数 与 setting.big_v_level ，大于0 就成为了大V
+     *
+     * 这个方法是给 BigvTask 使用
+     */
     public function buildBigvCache() {
         if(isset($this->partition['step']) && is_array($this->partition['step'])) {
             $temps = $this->partition['step'];
@@ -117,6 +177,12 @@ class UserCountModel extends \HsMysql\Model {
         }
     }
 
+
+    /**
+     * 当用户互粉时，判断一次是否大V，并更改大V缓存
+     * @param $uid
+     * @return bool
+     */
     public function setBigv($uid) {
         $status = false;
         $fans_count = $this->getCountByField($uid, 'fans_count');
@@ -130,6 +196,11 @@ class UserCountModel extends \HsMysql\Model {
         return $status;
     }
 
+    /**
+     * 批量比较是否大V
+     * @param $ids
+     * @return array
+     */
     public function diffBigv($ids) {
         $tmp = array();
         if(!$ids) {

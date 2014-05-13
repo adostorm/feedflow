@@ -8,12 +8,40 @@
 class UserRelationModel extends \HsMysql\Model
 {
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_userstate';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname = 'user_relation';
 
+    /**
+     * 主键
+     * @var string
+     */
     public $index = 'idx0';
 
+    /**
+     * 主键
+     * @var string
+     */
+    public $redis = null;
+
+    /**
+     * 大V缓存Key
+     * @var string
+     */
+    public $cache_big_v_set = '';
+
+    /**
+     * 分表规则
+     * @var array
+     */
     public $partition = array(
         'field'=>'uid',
         'mode'=>'range',
@@ -24,16 +52,24 @@ class UserRelationModel extends \HsMysql\Model
         'limit'=>399
     );
 
-    public $redis = null;
-
-    public $cache_big_v_set = '';
-
+    /**
+     * 初始化
+     * @param $di
+     */
     public function __construct($di) {
         parent::__construct($di, '');
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
-        $this->cache_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
+        $this->cache_big_v_set =
+            \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
     }
 
+    /**
+     * 检查好友关系， 直接查库
+     * 根据对方ID与用户自己ID
+     * @param $friend_uid
+     * @param $uid
+     * @return int
+     */
     public function checkRelation($friend_uid, $uid)
     {
         if($friend_uid == $uid) {
@@ -46,6 +82,13 @@ class UserRelationModel extends \HsMysql\Model
         return isset($result[0]) ? intval($result[0]) : -99;
     }
 
+    /**
+     * 创建好友关系
+     *      1,
+     * @param $uid
+     * @param $friend_uid
+     * @return int
+     */
     public function createRelation($uid, $friend_uid)
     {
         $status = $this->checkRelation($friend_uid, $uid);

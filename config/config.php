@@ -87,13 +87,11 @@ $config = new \Phalcon\Config(array(
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
     ),
-
     'redis_connect' => array(
         'host' => '127.0.0.1',
         'port' => 6379,
         'password' => '',
     ),
-
     'redis_cache_keys' => array(
         'app_id_feeds' => 'cache:app:%d:feeds',
         'friend_appid_id_feeds' => 'cache:app:%d:friend:%d:feeds',
@@ -106,12 +104,10 @@ $config = new \Phalcon\Config(array(
         'feed_uid_push'=>'cache:feed:%d:push',
         'big_v_set'=> 'cache:big_v_set',
     ),
-
     'queue_connect' => array(
         'host' => '127.0.0.1',
         'port' => '11980',
     ),
-
     'queue_keys' => array(
         'allfeeds' => 'queue_allfeeds',
         'pushfeeds' => 'queue_%d_feeds',

@@ -8,12 +8,34 @@
 class FeedRelationModel extends \HsMysql\Model
 {
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_feedstate';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname = 'feed_relation';
 
+    /**
+     * 主键
+     * @var string
+     */
     public $index = 'idx0';
 
+    /**
+     * Redis 对象
+     * @var null|Util\RedisClient
+     */
+    public $redis = null;
+
+    /**
+     * 分表规则
+     * @var array
+     */
     public $partition = array(
         'field'=>'uid',
         'mode'=>'mod',
@@ -24,16 +46,21 @@ class FeedRelationModel extends \HsMysql\Model
         'limit'=>399
     );
 
-    public $redis = null;
 
-    public $cache_me_appid_id_feeds  = '';
-
+    /**
+     * 初始化DI，Redis
+     * @param $di
+     */
     public function __construct($di) {
         parent::__construct($di, '');
         $this->redis = \Util\RedisClient::getInstance($di);
-        $this->cache_me_appid_id_feeds = \Util\ReadConfig::get('redis_cache_keys.me_appid_id_feeds', $di);
     }
 
+    /**
+     * 创建Feed和用户的关系
+     * @param $model
+     * @return mixed
+     */
     public function create($model)
     {
         $result = $this->insert(array(
@@ -43,12 +70,6 @@ class FeedRelationModel extends \HsMysql\Model
             'create_at'=> (int) $model['create_at'],
         ));
         return $result;
-    }
-
-    public function getListByUid($app_id, $uid) {
-        $key = sprintf($this->cache_me_appid_id_feeds, $app_id, $uid);
-        $results = $this->redis->zrange($key, 0, 19);
-        return $results;
     }
 
 }

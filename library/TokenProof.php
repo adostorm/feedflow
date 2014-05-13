@@ -17,7 +17,8 @@ final class TokenProof {
                 $params[$key] = $app->request->get($key);
             }
         }
-        $token = \Util\Token::gen($params, 'dddddd');
+        $secrete = 'TO0nOIvhIFSitBMUgxlXbxmvris=';
+        $token = \Util\Token::gen($params, $secrete);
         if($app->request->get('showtoken')) {
             echo '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />';
             var_dump($app->request->get());

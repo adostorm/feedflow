@@ -7,14 +7,34 @@
 
 class FeedModel extends \HsMysql\Model {
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_feedcontent';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname = 'feed_content';
 
+    /**
+     * 主键
+     * @var string
+     */
     public $index = 'PRIMARY';
 
+    /**
+     * redis Feed内容缓存Key
+     * @var string
+     */
     public $cache_key = '';
 
+    /**
+     * 分表规则
+     * @var array
+     */
     public $partition = array(
         'field'=>'author_id',
         'mode'=>'range',
@@ -25,12 +45,27 @@ class FeedModel extends \HsMysql\Model {
         'limit'=>399
     );
 
+    /**
+     * 构造函数
+     *      初始化DI，缓存Key
+     * @param $di
+     */
     public function __construct($di) {
         parent::__construct($di, '');
         $this->cache_key =
             \Util\ReadConfig::get('redis_cache_keys.feed_id_content', $this->getDi());
     }
 
+    /**
+     * 创建一条Feed内容
+     *      1, 生成Feed索引
+     *      2, 生成用户索引
+     *      3, 写入Feed内容
+     *      4, 更新用户的Feed Count
+     *      5, 写入Redis缓存
+     * @param $data
+     * @return bool
+     */
     public function create($data) {
         $feedIndexModel = new FeedIndexModel($this->getDi());
         $feed_id = $feedIndexModel->create();
@@ -74,6 +109,14 @@ class FeedModel extends \HsMysql\Model {
         return false;
     }
 
+    /**
+     * 取得一条Feed的内容
+     *      1, 先取缓存
+     *      2, 如果缓存过期，则从数据库取
+     *      3, 从数据库取出数据后，整个数据使用msgpack_pack压缩后再写入Redis缓存
+     * @param $feed_id
+     * @return array
+     */
     public function getById($feed_id) {
         $key = sprintf($this->cache_key, $feed_id);
 
