@@ -51,6 +51,10 @@ class Model
 
     public $partition = array();
 
+    public $isChangedPartition = false;
+
+    public $logger = null;
+
     /**
      * @return null
      */
@@ -72,6 +76,7 @@ class Model
     public function __construct($di, $link='')
     {
         $this->di = $di;
+        $this->logger = \Util\Logger::init();
         $this->_parseName($link);
     }
 
@@ -149,23 +154,30 @@ class Model
         $this->isAssociate = $bool;
     }
 
-    public function find($key = '', $op = '=', $changePartitionKey=0)
+    public function setPartition($changePartitionKey=0) {
+        if($changePartitionKey) {
+            $this->_parsePartition($changePartitionKey);
+            $this->isChangedPartition = true;
+        }
+        return $this;
+    }
+
+    public function find($key = '', $op = '=')
     {
         $this->_parseFilter();
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::READ_PORT));
-        if($changePartitionKey) {
-            $this->_parsePartition($changePartitionKey);
-        } else {
+        if(!$this->isChangedPartition) {
             $this->_parsePartition($key);
         }
         try {
             $handlersocket = $handler->initOpenIndex(self::SELECT, $this->tbname, $this->index, $this->fields, $this->indexFilter);
             $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter);
-            if($result===false) {
-                echo ($handlersocket->getError());
+            $this->isChangedPartition = false;
+            if(false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
         } catch(Exception $e) {
-            echo $e->getMessage();
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
 
         $result = $this->_parseData($result);
@@ -181,11 +193,11 @@ class Model
         try {
             $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
             $result = $handlersocket->executeUpdate(self::UPDATE, $op, array($key), $pairs['values'], $this->limit, $this->offset, $this->whereFilter);
-            if($result===false) {
-                var_dump($handlersocket->getError());
+            if(false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
         } catch(Exception $e) {
-            echo $e->getMessage();
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
         return $result;
     }
@@ -198,11 +210,11 @@ class Model
         try {
             $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $pairs['fields']);
             $result = $handlersocket->executeInsert(self::INSERT, $pairs['values']);
-            if($result===false) {
-                echo ($handlersocket->getError());
+            if(false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
         } catch(Exception $e) {
-            echo $e->getMessage();
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
         return $result;
     }
@@ -221,6 +233,9 @@ class Model
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         $handlersocket = $handler->initOpenIndex(self::DELETE, $this->tbname, $this->index, $field, $this->indexFilter);
         $result = $handlersocket->executeDelete(self::DELETE, $op, array($key), $this->limit, $this->offset, $this->whereFilter);
+        if(false === $result) {
+            $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
+        }
         return $result;
     }
 
@@ -240,11 +255,11 @@ class Model
         try {
             $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
             $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $pairs['values'], $this->whereFilter);
-            if($result===false) {
-                echo ($handlersocket->getError());
+            if(false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
         } catch(Exception $e) {
-            echo $e->getMessage();
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
         $result = $this->_parseData($result);
         return $result;

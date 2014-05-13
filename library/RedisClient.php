@@ -23,6 +23,8 @@ final class RedisClient
 
     private $redis = null;
 
+    private $logger = null;
+
     private static $instance = null;
 
     private function __construct() {}
@@ -35,6 +37,7 @@ final class RedisClient
             $_instance->port = ReadConfig::get('redis_connect.port', $di);
             $_instance->password = ReadConfig::get('redis_connect.password', $di);
             $_instance->_init();
+            $_instance->logger = \Util\Logger::init();
             self::$instance = $_instance;
             unset($_instance);
         }
@@ -53,7 +56,7 @@ final class RedisClient
             if($this->password) {
                 $status = $this->auth($this->password);
                 if(false === $status) {
-                    throw new Exception('redis auth error : authenticate fail');
+                    throw new Exception('redis auth error : authenticate fail'.PHP_EOL);
                     exit(1);
                 }
             }
@@ -68,6 +71,10 @@ final class RedisClient
     public function __call($name, $arguments) {
         if(method_exists($this->redis, $name)) {
             return call_user_func_array(array($this->redis, $name), $arguments);
+        } else {
+            $this->logger->log("reids method \"{$name}\" not found", \Phalcon\Logger::ERROR);
+            throw new Exception("reids method \"{$name}\" not found".PHP_EOL);
+            exit;
         }
     }
 }

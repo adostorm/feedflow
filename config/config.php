@@ -113,8 +113,8 @@ $config = new \Phalcon\Config(array(
     ),
 
     'queue_keys' => array(
-        'allfeeds' => 'queue:allfeeds',
-        'pushfeeds' => 'queue:%d:feeds',
+        'allfeeds' => 'queue_allfeeds',
+        'pushfeeds' => 'queue_%d_feeds',
     ),
 
 ));

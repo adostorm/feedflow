@@ -97,30 +97,28 @@ class UserCountModel extends \HsMysql\Model {
         return $result;
     }
 
-
     public function buildBigvCache() {
-        $keyExists = $this->redis->exists($this->cache_big_v_set);
-        if($keyExists) {
-           return ;
-        }
+        if(isset($this->partition['step']) && is_array($this->partition['step'])) {
+            $temps = $this->partition['step'];
+            array_pop($temps);
+            foreach($temps as $step) {
+                $results = $this->field('uid,fans_count')->filter(array(
+                    array('fans_count','>=', $this->big_v_level),
+                ))->limit(0, 2000)->setPartition($step)->find(0, '>');
 
-        //还要修改
-        $results = $this->field('uid,fans_count')->filter(array(
-            array('fans_count','>=', $this->big_v_level),
-        ))->limit(0, 2000)->find(0, '>', 1);
-
-        if($results) {
-            $this->redis->pipeline();
-            foreach($results as $result) {
-                $this->redis->hset($this->cache_big_v_set, $result['uid'], $result['fans_count']);
+                if($results) {
+                    $this->redis->pipeline();
+                    foreach($results as $result) {
+                        $this->redis->hset($this->cache_big_v_set, $result['uid'], $result['fans_count']);
+                    }
+                    $this->redis->exec();
+                }
             }
-            $this->redis->exec();
         }
     }
 
     public function setBigv($uid) {
         $status = false;
-        $this->buildBigvCache();
         $fans_count = $this->getCountByField($uid, 'fans_count');
         if($fans_count > $this->big_v_level) {
             $this->redis->hset($this->cache_big_v_set, $uid, $fans_count);
@@ -135,7 +133,6 @@ class UserCountModel extends \HsMysql\Model {
     public function diffBigv($ids) {
         $tmp = array();
         if(!$ids) {
-            $this->buildBigvCache();
             $results = $this->redis->hmGet($this->cache_big_v_set, $ids);
             if($results) {
                 foreach($results as $k=>$v) {
