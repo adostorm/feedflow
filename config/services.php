@@ -28,9 +28,9 @@ $di['url'] = function () use ($config) {
     return $url;
 };
 
-foreach($config as $k=>$v) {
-    if(0===stripos($k, 'link_')) {
-        $di->set($k, function() use ($v) {
+foreach ($config as $k => $v) {
+    if (0 === stripos($k, 'link_')) {
+        $di->set($k, function () use ($v) {
             return new DbAdapter(array(
                 "host" => $v->host,
                 "username" => $v->username,

@@ -5,29 +5,31 @@
  * Time: 上午10:38
  */
 
-class UserController extends CController {
+class UserController extends CController
+{
 
-    public function isFriend() {
+    public function isFriend()
+    {
 
         $uid = $this->request->getPost('uid', 'int');
         $friend_uid = $this->request->getPost('friend_uid', 'int');
 
-        if(empty($uid)) {
+        if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
-        } else if(empty($friend_uid)) {
+        } else if (empty($friend_uid)) {
             throw new \Util\APIException(400, 2001, '好友ID不能为空');
         }
 
         $user = new UserRelationModel($this->getDI());
         $status = $user->checkRelation($friend_uid, $uid);
 
-        if($status == -98) {
+        if ($status == -98) {
             throw new \Util\APIException(403, 2002, '不能关注自己');
-        } else if($status == -99 || $status == -1) {
+        } else if ($status == -99 || $status == -1) {
             throw new \Util\APIException(400, 2003, '不是好友');
         }
 
-        switch($status) {
+        switch ($status) {
             case -99:
             case -1:
                 $msg = '未关注';
@@ -44,17 +46,20 @@ class UserController extends CController {
         }
 
         $this->render(array(
-            'status'=>$status
+            'status' => $status
         ), $msg);
     }
 
-    public function getFansList() {
+    public function getFansList()
+    {
         $uid = $this->request->get('uid', 'int');
         $page = $this->request->get('page', 'int');
         $count = $this->request->get('count', 'int');
 
-        if(empty($uid)) {
+        if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
+        } else if ($uid < 0) {
+            throw new \Util\APIException(400, 2002, '用户ID不正确');
         }
 
         $page = $page > 0 ? $page : 1;
@@ -68,12 +73,13 @@ class UserController extends CController {
         $this->render($result);
     }
 
-    public function getFollowList() {
+    public function getFollowList()
+    {
         $uid = $this->request->get('uid', 'int');
         $page = $this->request->get('page', 'int');
         $count = $this->request->get('count', 'int');
 
-        if(empty($uid)) {
+        if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
         }
 
@@ -88,64 +94,66 @@ class UserController extends CController {
         $this->render($result);
     }
 
-    public function addFollow() {
+    public function addFollow()
+    {
         $app_id = $this->request->getPost('app_id', 'int');
         $repush = $this->request->getPost('repush', 'int');
         $uid = $this->request->getPost('uid', 'int');
         $friend_uid = $this->request->getPost('friend_uid', 'int');
 
-        if(empty($uid)) {
+        if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
-        } else if(empty($friend_uid)) {
+        } else if (empty($friend_uid)) {
             throw new \Util\APIException(400, 2001, '好友ID不能为空');
         }
 
         $user = new UserRelationModel($this->getDI());
         $result = $user->createRelation($uid, $friend_uid);
 
-        if($result == -98) {
+        if ($result == -98) {
             throw new \Util\APIException(403, 2002, '不能关注自己');
         }
 
-        if(in_array($result, array(1, 2))) {
+        if (in_array($result, array(1, 2))) {
             $msg = '关注成功';
         } else {
             $msg = '关注失败';
         }
 
         $this->render(array(
-            'status'=>$result,
+            'status' => $result,
         ), $msg);
     }
 
-    public function unFollow() {
+    public function unFollow()
+    {
 
         $uid = $this->request->getPost('uid', 'int');
         $friend_uid = $this->request->getPost('friend_uid', 'int');
 
-        if(empty($uid)) {
+        if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
-        } else if(empty($friend_uid)) {
+        } else if (empty($friend_uid)) {
             throw new \Util\APIException(400, 2001, '好友ID不能为空');
         }
 
         $user = new UserRelationModel($this->getDI());
         $result = $user->removeRelation($uid, $friend_uid);
 
-        if($result == -98) {
+        if ($result == -98) {
             throw new \Util\APIException(403, 2002, '不能关注自己');
-        } else if($result == -99) {
+        } else if ($result == -99) {
             throw new \Util\APIException(403, 2003, '不是好友');
         }
 
-        if(in_array($result, array(-1, 0))) {
+        if (in_array($result, array(-1, 0))) {
             $msg = '取消成功';
         } else {
             $msg = '取消失败';
         }
 
         $this->render(array(
-            'status'=>$result,
+            'status' => $result,
         ), $msg);
     }
 

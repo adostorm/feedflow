@@ -5,9 +5,11 @@
  * Time: 上午4:56
  */
 
-class CController extends \Phalcon\Mvc\Controller {
+class CController extends \Phalcon\Mvc\Controller
+{
 
-    public function render($data, $message='OK') {
+    public function render($data, $message = 'OK')
+    {
 
         header('HTTP/1.1 200 OK');
         header('Status: 200 OK');
@@ -19,7 +21,7 @@ class CController extends \Phalcon\Mvc\Controller {
                 'errno' => 0,
                 'msg' => $message,
             ),
-            'data'=>$data
+            'data' => $data
         );
 
         exit(json_encode($result));

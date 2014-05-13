@@ -5,7 +5,7 @@
  * Time: 下午12:12
  */
 
-class UserFeed extends \Phalcon\Mvc\Model
+class UserFeed extends AdvModel
 {
 
     public $feed_id = 0;
@@ -15,6 +15,21 @@ class UserFeed extends \Phalcon\Mvc\Model
     public $uid = 0;
 
     public $create_at = 0;
+
+    public $dbname = 'db_userfeed';
+
+    public $tbname = 'user_feed';
+
+    public $partition = array(
+        'field' => 'uid',
+        'mode' => 'range',
+        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
+            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
+            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
+            2000000, 1000000000),
+        'limit' => 399
+    );
+
 
     /**
      * @param int $app_id
@@ -95,7 +110,7 @@ class UserFeed extends \Phalcon\Mvc\Model
         $conditions = array_merge($default, $extends);
 
         $results = $this->find(array(
-            'app_id=:app_id: and uid=:uid: and create_at>=:timeline:',
+            'app_id=:app_id: and uid=:uid: and create_at>=:create_at:',
             'columns' => $conditions['fields'],
             'order' => $conditions['order'],
             'limit' => array(
@@ -114,7 +129,7 @@ class UserFeed extends \Phalcon\Mvc\Model
         if ($results->getFirst()) {
             $feedHsModel = new FeedModel($this->getDI());
             foreach ($results as $result) {
-                $rets[] =  $feedHsModel->getById($result->feed_id);
+                $rets[] = $feedHsModel->getById($result->feed_id);
             }
         }
 

@@ -51,6 +51,10 @@ class Model
 
     public $partition = array();
 
+    public $isChangedPartition = false;
+
+    public $logger = null;
+
     /**
      * @return null
      */
@@ -69,9 +73,10 @@ class Model
         return $this;
     }
 
-    public function __construct($di, $link='')
+    public function __construct($di, $link = '')
     {
         $this->di = $di;
+        $this->logger = \Util\Logger::init();
         $this->_parseName($link);
     }
 
@@ -94,14 +99,14 @@ class Model
         static $cacheConfig = array();
 
         $link = sprintf('link_%s', $this->dbname);
-        $key = $link.$readOrWrite;
+        $key = $link . $readOrWrite;
         if (is_object($this->di) && !isset($cacheConfig[$key])) {
             $config = array();
             $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
             $config['host'] = ReadConfig::get("{$link}.host", $this->di);
             $slave = ReadConfig::get("{$link}.slave", $this->di)->toArray();
 
-            if($readOrWrite == self::READ_PORT && $slave) {
+            if ($readOrWrite == self::READ_PORT && $slave) {
                 $randSlave = array_rand($slave);
                 $config['host'] = $randSlave['host'];
                 $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
@@ -149,23 +154,31 @@ class Model
         $this->isAssociate = $bool;
     }
 
-    public function find($key = '', $op = '=', $changePartitionKey=0)
+    public function setPartition($changePartitionKey = 0)
+    {
+        if ($changePartitionKey) {
+            $this->_parsePartition($changePartitionKey);
+            $this->isChangedPartition = true;
+        }
+        return $this;
+    }
+
+    public function find($key = '', $op = '=')
     {
         $this->_parseFilter();
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::READ_PORT));
-        if($changePartitionKey) {
-            $this->_parsePartition($changePartitionKey);
-        } else {
+        if (!$this->isChangedPartition) {
             $this->_parsePartition($key);
         }
         try {
             $handlersocket = $handler->initOpenIndex(self::SELECT, $this->tbname, $this->index, $this->fields, $this->indexFilter);
             $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter);
-            if($result===false) {
-                echo ($handlersocket->getError());
+            $this->isChangedPartition = false;
+            if (false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
-        } catch(Exception $e) {
-            echo $e->getMessage();
+        } catch (Exception $e) {
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
 
         $result = $this->_parseData($result);
@@ -181,11 +194,11 @@ class Model
         try {
             $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
             $result = $handlersocket->executeUpdate(self::UPDATE, $op, array($key), $pairs['values'], $this->limit, $this->offset, $this->whereFilter);
-            if($result===false) {
-                var_dump($handlersocket->getError());
+            if (false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
-        } catch(Exception $e) {
-            echo $e->getMessage();
+        } catch (Exception $e) {
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
         return $result;
     }
@@ -198,11 +211,11 @@ class Model
         try {
             $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $pairs['fields']);
             $result = $handlersocket->executeInsert(self::INSERT, $pairs['values']);
-            if($result===false) {
-                echo ($handlersocket->getError());
+            if (false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
-        } catch(Exception $e) {
-            echo $e->getMessage();
+        } catch (Exception $e) {
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
         return $result;
     }
@@ -221,18 +234,24 @@ class Model
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         $handlersocket = $handler->initOpenIndex(self::DELETE, $this->tbname, $this->index, $field, $this->indexFilter);
         $result = $handlersocket->executeDelete(self::DELETE, $op, array($key), $this->limit, $this->offset, $this->whereFilter);
+        if (false === $result) {
+            $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
+        }
         return $result;
     }
 
-    public function increment($key, $data) {
+    public function increment($key, $data)
+    {
         return $this->_countUpdate($key, $data, '+');
     }
 
-    public function decrement($key, $data) {
+    public function decrement($key, $data)
+    {
         return $this->_countUpdate($key, $data, '-');
     }
 
-    private function _countUpdate($key, $data, $mode='+', $op='=') {
+    private function _countUpdate($key, $data, $mode = '+', $op = '=')
+    {
         $this->_parsePartition($key);
         $this->_parseFilter();
         $pairs = $this->_parseFieldsAndValues($data);
@@ -240,47 +259,49 @@ class Model
         try {
             $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
             $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $pairs['values'], $this->whereFilter);
-            if($result===false) {
-                echo ($handlersocket->getError());
+            if (false === $result) {
+                $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
-        } catch(Exception $e) {
-            echo $e->getMessage();
+        } catch (Exception $e) {
+            $this->logger->log($e->getMessage(), \Phalcon\Logger::ERROR);
         }
         $result = $this->_parseData($result);
         return $result;
     }
 
-    public function _parsePartitionByInsert($data) {
-        if(isset($this->partition['field']) && isset($data[$this->partition['field']])) {
+    public function _parsePartitionByInsert($data)
+    {
+        if (isset($this->partition['field']) && isset($data[$this->partition['field']])) {
             $this->_parsePartition($data[$this->partition['field']]);
         }
     }
 
-    public function _parsePartition($id) {
+    public function _parsePartition($id)
+    {
         static $cacheTable = array();
 
-        if(!isset($cacheTable[$this->tbname]) && is_array($this->partition) && $this->partition) {
-            if($this->partition['mode']=='mod') {
-                $ret = $id%$this->partition['step'];
-                $this->tbname .= '_'.$ret;
-            } else if($this->partition['mode']=='range') {
+        if (!isset($cacheTable[$this->tbname]) && is_array($this->partition) && $this->partition) {
+            if ($this->partition['mode'] == 'mod') {
+                $ret = $id % $this->partition['step'];
+                $this->tbname .= '_' . $ret;
+            } else if ($this->partition['mode'] == 'range') {
                 $steps = $this->partition['step'];
                 $count = sizeof($steps);
                 $num = 0;
-                for($i=0;$i<$count;$i++) {
-                    if(($i+1) == $count) {//boundary
+                for ($i = 0; $i < $count; $i++) {
+                    if (($i + 1) == $count) { //boundary
                         $num = $i;
-                    } else if($id>=$steps[$i] && $id<$steps[$i+1]) {
+                    } else if ($id >= $steps[$i] && $id < $steps[$i + 1]) {
                         $num = $i;
                         break;
                     }
                 }
-                $this->tbname .= '_'.$num;
+                $this->tbname .= '_' . $num;
 
                 $cacheTable[$this->tbname] = $this->tbname;
 
-                if($num > $this->partition['limit']) {
-                    $this->dbname .= '_'.floor($num/$this->partition['limit']);
+                if ($num > $this->partition['limit']) {
+                    $this->dbname .= '_' . floor($num / $this->partition['limit']);
                 }
             }
         }
@@ -326,7 +347,8 @@ class Model
         }
     }
 
-    private function _parseStringTpArray($string='') {
+    private function _parseStringTpArray($string = '')
+    {
         $_pairs = array();
         if (is_string($string)) {
             $_units = explode(',', $string);
@@ -340,10 +362,11 @@ class Model
         return $_pairs;
     }
 
-    private function _parseFieldsAndValues($data) {
+    private function _parseFieldsAndValues($data)
+    {
         return array(
-            'fields'=>array_keys($data),
-            'values'=>array_values($data),
+            'fields' => array_keys($data),
+            'values' => array_values($data),
         );
     }
 

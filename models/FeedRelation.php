@@ -16,13 +16,23 @@ class FeedRelation extends AdvModel
 
     public $weight = 0;
 
-    public $cache_friend_appid_id_feeds = '';
+    public $cache_friend = '';
 
     public $cache_timeline = 0;
 
     public $redis = null;
 
+    public $dbname = 'db_feedstate';
 
+    public $partition = array(
+        'field' => 'uid',
+        'mode' => 'range',
+        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
+            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
+            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
+            2000000, 1000000000),
+        'limit' => 399
+    );
 
     /**
      * @param int $feed_id
@@ -91,24 +101,24 @@ class FeedRelation extends AdvModel
 
     public function initialize()
     {
-
         $this->redis = \Util\RedisClient::getInstance($this->getDI());
-        $this->cache_friend_appid_id_feeds =
+        $this->cache_friend =
             \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds', $this->getDI());
         $this->cache_timeline =
-            \Util\ReadConfig::get('redis_cache_keys.friend_id_feeds_timeline', $this->getDI());
+            \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds_timeline', $this->getDI());
     }
 
 
-    public function getFollowFeedsCount($app_id, $uid) {
-        $key = sprintf($this->cache_friend_appid_id_feeds, $app_id, $uid);
+    public function getFollowFeedsCount($app_id, $uid)
+    {
+        $key = sprintf($this->cache_friend, $app_id, $uid);
         return $this->redis->zcard($key);
     }
 
 
     public function getFollowFeedsByUid($app_id, $uid, $offset = 0, $limit = 15)
     {
-        $key = sprintf($this->cache_friend_appid_id_feeds, $app_id, $uid);
+        $key = sprintf($this->cache_friend, $app_id, $uid);
 
         $timeline_key = sprintf($this->cache_timeline, $app_id, $uid);
         $timeline = $this->redis->get($timeline_key);
@@ -118,29 +128,22 @@ class FeedRelation extends AdvModel
 
         $expire = \Util\ReadConfig::get('setting.cache_timeout_t2', $this->getDI());
         if ($offset == 0 && ((time() - $timeline) > $expire)) {
-            $this->init($uid);
             $this->redis->delete($key);
             $userFeed = new UserFeed();
-            $models = $userFeed->find(array(
-                "uid=:uid: and app_id=:app_id: and create_at>:timeline:",
-                'order' => 'create_at desc',
-                'limit' => array(
-                    'number' => 200,
-                    'offset' => 0,
-                ),
-                'bind' => array(
-                    'uid' => $uid,
-                    'app_id' => $app_id,
-                    'create_at' => $timeline,
-                ),
+            $models = $userFeed->getListByAppIdAndUid($app_id, $uid, array(
+                'offset' => 0,
+                'limit' => 200,
+                'timeline' => $timeline,
+                'fields' => 'app_id,uid,feed_id,create_at',
+                'order' => 'create_at desc'
             ));
 
-            if ($last = $models->getLast()) {
-                $this->redis->set($this->cache_timeline, $last->create_at);
+            if ($model_length = count($models)) {
+                $this->redis->set($this->cache_timeline, $models[$model_length - 1]['create_at']);
                 $this->redis->pipeline();
                 foreach ($models as $model) {
-                    $this->redis->zadd($key, -$model->create_at
-                        , msgpack_pack($model->toArray()));
+                    $this->redis->zadd($key, -$model['create_at']
+                        , msgpack_pack($model));
                 }
                 $this->redis->exec();
             }
@@ -174,17 +177,17 @@ class FeedRelation extends AdvModel
                         'order' => 'create_at desc'
                     ));
 
-                    if ($bigFriendFeeds->getFirst()) {
+                    if ($model_length = count($bigFriendFeeds)) {
                         $this->redis->pipeline();
                         foreach ($bigFriendFeeds as $_feed) {
-                            $this->redis->zadd($key, -$_feed->creat_at
-                                , msgpack_pack($_feed->toArray()));
+                            $this->redis->zadd($key, -$_feed['creat_at']
+                                , msgpack_pack($_feed));
                         }
                         $this->redis->exec();
                     }
                 }
 
-                if($this->redis->zcard($key) > 200) {
+                if ($this->redis->zcard($key) > 200) {
                     $this->redis->zremrangebyrank($key, 201, -1);
                 }
             }
@@ -193,7 +196,15 @@ class FeedRelation extends AdvModel
 
         $results = $this->redis->zrange($key, $offset, $limit);
 
-        return $results ? $results : array();
+        $rets = array();
+        if ($results) {
+            foreach ($results as $result) {
+                $rets[] = msgpack_unpack($result);
+            }
+        }
+        unset($results);
+
+        return $rets;
     }
 
 }

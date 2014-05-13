@@ -14,8 +14,8 @@ $loader->registerDirs(
 );
 
 $loader->registerNamespaces(array(
-    'Util'=>$config->application->libraryDir,
-    'HsMysql'=>$config->application->vendorDir.'hsmysql/',
+    'Util' => $config->application->libraryDir,
+    'HsMysql' => $config->application->vendorDir . 'hsmysql/',
 ));
 
 $loader->register();

@@ -9,15 +9,22 @@ namespace Util;
 
 use Phalcon\Exception;
 
-final class ReadConfig {
+final class ReadConfig
+{
 
-    private function __construct() {}
-    private function __clone() {}
+    private function __construct()
+    {
+    }
 
-    public static function get($nameString, $di) {
+    private function __clone()
+    {
+    }
+
+    public static function get($nameString, $di)
+    {
         static $config = null;
 
-        if(null === $config) {
+        if (null === $config) {
             $config = $di->get('config');
         }
 
@@ -27,13 +34,14 @@ final class ReadConfig {
     }
 
 
-    private static function _reduce($nameString, $config) {
+    private static function _reduce($nameString, $config)
+    {
         $names = explode('.', $nameString);
-        foreach($names as $name) {
-            if(isset($config->{$name})) {
+        foreach ($names as $name) {
+            if (isset($config->{$name})) {
                 $config = $config->{$name};
             } else {
-                throw new Exception('no config name : '.$name);
+                throw new Exception('no config name : ' . $name);
             }
         }
         return $config;

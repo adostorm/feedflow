@@ -18,15 +18,18 @@ class UserRelation extends AdvModel
 
     public $weight = 0;
 
+    public $dbname = 'db_userstate';
+
     public $tbname = 'user_relation';
 
-    public $dbname = 'userstate';
-
     public $partition = array(
-        'field'=>'uid',
-        'mode'=>'range',
-        'step'=>array(1,100000,200000,300000,400000,500000,600000,1000000000),
-        'limit'=>399
+        'field' => 'uid',
+        'mode' => 'range',
+        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
+            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
+            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
+            2000000, 1000000000),
+        'limit' => 399
     );
 
     /**
@@ -109,30 +112,25 @@ class UserRelation extends AdvModel
         return (int)$this->weight;
     }
 
-    public function initialize()
-    {
-//        $this->setConnectionService('link_userstate');
-    }
-
-    public function getFollowList($uid, $offset=0, $limit=15)
+    public function getFollowList($uid, $offset = 0, $limit = 15)
     {
         $this->init($uid);
         $models = $this->find(array(
             'uid=:uid: and status in (0, 1)',
-            'columns'=>'friend_uid',
-            'order'=>'create_at desc',
-            'limit'=>array(
-                'number'=>$limit,
-                'offset'=>$offset,
+            'columns' => 'friend_uid',
+            'order' => 'create_at desc',
+            'limit' => array(
+                'number' => $limit,
+                'offset' => $offset,
             ),
-            'bind'=>array(
-                'uid'=>$uid,
+            'bind' => array(
+                'uid' => $uid,
             ),
         ));
 
         $results = array();
-        if($models->getFirst()) {
-            foreach($models as $model) {
+        if ($models->getFirst()) {
+            foreach ($models as $model) {
                 $results[] = $model->friend_uid;
             }
         }
@@ -141,25 +139,25 @@ class UserRelation extends AdvModel
     }
 
 
-    public function getFansList($uid, $offset=0, $limit=15)
+    public function getFansList($uid, $offset = 0, $limit = 15)
     {
         $this->init($uid);
         $models = $this->find(array(
             'uid=:uid: and status in (1,2)',
-            'columns'=>'friend_uid',
-            'order'=>'create_at desc',
-            'limit'=>array(
-                'number'=>$limit,
-                'offset'=>$offset,
+            'columns' => 'friend_uid',
+            'order' => 'create_at desc',
+            'limit' => array(
+                'number' => $limit,
+                'offset' => $offset,
             ),
-            'bind'=>array(
-                'uid'=>$uid,
+            'bind' => array(
+                'uid' => $uid,
             ),
         ));
 
         $results = array();
-        if($models->getFirst()) {
-            foreach($models as $model) {
+        if ($models->getFirst()) {
+            foreach ($models as $model) {
                 $results[] = $model->friend_uid;
             }
         }

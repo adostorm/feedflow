@@ -8,12 +8,19 @@
 namespace Util;
 
 
-final class Token {
+final class Token
+{
 
-    private function __construct() {}
-    private function __clone() {}
+    private function __construct()
+    {
+    }
 
-    public static function gen($data, $key) {
+    private function __clone()
+    {
+    }
+
+    public static function gen($data, $key)
+    {
         $token = $key;
         $token .= self::loop_array_token($data);
         $token .= $key;
@@ -21,19 +28,20 @@ final class Token {
         return $token;
     }
 
-    private static function loop_array_token($param){
+    private static function loop_array_token($param)
+    {
         $token = "";
         ksort($param);
-        foreach($param as $k=>$v){
-            if(is_array($v)){
-                $token .="{$k}";
+        foreach ($param as $k => $v) {
+            if (is_array($v)) {
+                $token .= "{$k}";
                 $token .= self::loop_array_token($v);
-            }else{
+            } else {
                 $token .= "{$k}{$v}";
             }
         }
         //处理特殊转义字符。
-        if(get_magic_quotes_gpc()) {
+        if (get_magic_quotes_gpc()) {
             return stripslashes($token);
         }
         return $token;

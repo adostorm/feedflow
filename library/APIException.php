@@ -9,13 +9,14 @@ namespace Util;
 
 use Phalcon\Exception;
 
-class APIException extends Exception{
+final class APIException extends Exception
+{
 
     protected $status = 0;
 
     protected $_types = array(
-        'json'=>'application/json',
-        'xml'=>'application/xml',
+        'json' => 'application/json',
+        'xml' => 'application/xml',
     );
 
     public function __construct($status, $code = 0, $message)
@@ -26,7 +27,8 @@ class APIException extends Exception{
         exit($this->render());
     }
 
-    protected function render() {
+    protected function render()
+    {
         $this->sendHttpStatus($this->status);
         $this->sendContentType('json');
 

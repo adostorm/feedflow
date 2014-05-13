@@ -5,79 +5,82 @@
  * Time: 下午6:40
  */
 
-class FeedTask extends \Phalcon\CLI\Task {
+class FeedTask extends \Phalcon\CLI\Task
+{
 
-    public function runAction() {
+    private $k1 = '';
+    private $k2 = '';
+    private $q1 = null;
+    private $q2 = null;
+    private $redis = null;
+    private $cache_key = '';
+
+    /**
+     * php cli.php Feed run
+     */
+    public function runAction()
+    {
+        $this->_init();
         $this->_processQueue();
     }
 
-
-
-
-//        $queue1 = \Util\BStalkClient::getInstance($di);
-//        $queue1->choose($allfeeds);
-//        $queue1->watch($allfeeds);
-//
-//        $queue2 = \Util\BStalkClient::getInstance($di);
-//        $queue2->choose($pushfeeds);
-//        $queue2->watch($pushfeeds);
-    private function _processQueue() {
+    private function _init()
+    {
         $di = $this->getDI();
-
-        $allfeeds = \Util\ReadConfig::get('queue_keys.allfeeds', $di);
-        $pushfeeds = \Util\ReadConfig::get('queue_keys.pushfeeds', $di);
-        $cache_feeds = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
-
-        $model = new FeedModel($this->getDI());
-        $redis = \Util\RedisClient::getInstance($di);
-
-
-        $config = array('host'=>'127.0.0.1', 'port'=>11980);
-        $queue1 = new \Phalcon\Queue\Beanstalk($config);
-        $queue1->choose($allfeeds);
-        $queue1->watch($allfeeds);
-
-        $queue2 = new \Phalcon\Queue\Beanstalk($config);
-
-        static $isChoose = null;
-
-        while(true) {
-            try {
-                if(false !== $queue1->peekReady()) {
-                    $job = $queue1->reserve();
-                    $message = $job->getBody();
-                    $oldMessage = $message;
-                    var_dump($message);
-                    $newMessage = msgpack_unpack($message);
-                    $feed_id = $model->create($newMessage);
-
-                    if($feed_id > 0) {
-                        $key = sprintf($cache_feeds, $newMessage['app_id']);
-                        $redis->zadd($key, -$newMessage['create_at'], $oldMessage);
-                        if($redis->zcard($key) > 1000) {
-                            $redis->zremrangebyrank($key, 501, -1);
-                        }
-                        if(!$isChoose) {
-                            $queue2->choose(sprintf($pushfeeds, $feed_id%10));
-                            $queue2->watch(sprintf($pushfeeds, $feed_id%10));
-                        }
-                        $queue2->put($newMessage['app_id'].'|'.$newMessage['author_id'].'|'.$feed_id.'|'.$newMessage['create_at']);
-
-                        $job->delete();
-                    }
-                }
-            } catch (\Exception $e) {
-                echo $e->getMessage();
-                exit(1);
-            }
-            sleep(1);
-        }
-
-
+        $this->k1 = \Util\ReadConfig::get('queue_keys.allfeeds', $di);
+        $this->k2 = \Util\ReadConfig::get('queue_keys.pushfeeds', $di);
+        $this->q1 = \Util\BStalkClient::getInstance($di, 'link_queue0');
+        $this->q2 = \Util\BStalkClient::getInstance($di, 'link_queue1');
+        $this->redis = \Util\RedisClient::getInstance($di);
+        $this->cache_key = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
     }
 
+    private function _processQueue()
+    {
+        $this->q1->choose($this->k1);
+        $this->q1->watch($this->k1);
+        $model = new FeedModel($this->getDI());
 
+        try {
+            while (1) {
+                while (false !== $this->q1->peekReady()) {
+                    $job = $this->q1->reserve();
 
+                    $old = $job->getBody();
+                    $new = msgpack_unpack($old);
+
+                    var_dump($new);
+                    $feed_id = $model->create($new);
+
+                    if ($feed_id) {
+                        $this->q2->choose(sprintf($this->k2, $feed_id % 10));
+                        $this->q2->put(sprintf('%d|%d|%d|%d'
+                            , $new['app_id'], $new['author_id'], $feed_id, $new['create_at']));
+
+                        $_key = sprintf($this->cache_key, $new['app_id']);
+                        $this->redis->zadd($_key, -$new['create_at'], $old);
+                        if ($this->redis->zcard($_key) > 1000) {
+                            $this->redis->zremrangebyrank($_key, 501, -1);
+                        }
+
+                        $job->delete();
+                    } else {
+                        $job->bury();
+                    }
+                }
+                sleep(10);
+            }
+        } catch (\Phalcon\Exception $e) {
+            if ($this->q1) {
+                $this->q1->disconnect();
+            }
+            if ($this->q2) {
+                $this->q2->disconnect();
+            }
+            echo $e->getMessage();
+            exit(1);
+        }
+    }
 
 
 }
