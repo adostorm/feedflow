@@ -15,7 +15,11 @@ $config = new \Phalcon\Config(array(
     'beanstalk' => array(
         'link_queue0' => array(
             'host' => '127.0.0.1',
-            'port' => 11307,
+            'port' => 11980,
+        ),
+        'link_queue1' => array(
+            'host' => '127.0.0.1',
+            'port' => 11981,
         ),
     ),
     'setting' => array(

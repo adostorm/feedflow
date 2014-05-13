@@ -11,36 +11,21 @@ use Phalcon\Queue\Beanstalk;
 
 final class BStalkClient {
 
-    private $host = '';
-
-    private $port = 0;
-
-    private static $bean = null;
+    private static $cacheConfigs = null;
 
     private function __construct() {}
     private function __clone(){}
 
-    public static function getInstance($di) {
-        if(null === self::$bean) {
-            $self = new self;
-            $self->host = ReadConfig::get('queue_connect.host', $di);
-            $self->port = ReadConfig::get('queue_connect.port', $di);
-            self::$bean = $self->_init();
+    public static function getInstance($di, $queueName='link_queue0') {
+        if(!isset(self::$cacheConfigs[$queueName])) {
+            $config = array(
+                'host'=>\Util\ReadConfig::get(sprintf('beanstalk.%s.host', $queueName), $di),
+                'port'=>\Util\ReadConfig::get(sprintf('beanstalk.%s.port', $queueName), $di),
+            );
+            self::$cacheConfigs[$queueName] = $config;
+            unset($config);
         }
-        return self::$bean;
-    }
-
-    private function _init() {
-        try {
-            $bean = new Beanstalk(array(
-                'host'=>$this->host,
-                'port'=>$this->port
-            ));
-            $bean->connect();
-            return $bean;
-        } catch(Exception $e) {
-            echo $e->getMessage();
-        }
+        return new Beanstalk(self::$cacheConfigs[$queueName]);
     }
 
 }
