@@ -14,9 +14,9 @@ $app->notFound(function () use ($app) {
     echo "<h1>404 NOT FOUND</h1>";
 });
 
-//$app->before(function () use ($app) {
-//    \Util\TokenProof::check($app);
-//});
+$app->before(function () use ($app) {
+    \Util\TokenProof::check($app);
+});
 
 $feedController = new FeedController();
 /**
