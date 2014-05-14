@@ -43,7 +43,7 @@ final class RedisClient
             $_instance->port = ReadConfig::get('redis_connect.port', $di);
             $_instance->password = ReadConfig::get('redis_connect.password', $di);
             $_instance->_init();
-            $_instance->logger = \Util\Logger::init();
+            $_instance->logger = \Util\Logger::init($di);
             self::$instance = $_instance;
             unset($_instance);
         }

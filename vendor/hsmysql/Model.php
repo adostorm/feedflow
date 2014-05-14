@@ -55,6 +55,8 @@ class Model
 
     public $logger = null;
 
+    public $in_values = null;
+
     /**
      * @return null
      */
@@ -76,7 +78,7 @@ class Model
     public function __construct($di, $link = '')
     {
         $this->di = $di;
-        $this->logger = \Util\Logger::init();
+        $this->logger = \Util\Logger::init($di);
         $this->_parseName($link);
     }
 
@@ -87,16 +89,17 @@ class Model
             $this->dbname = $dbname;
             $this->tbname = $tbname;
         }
-        if (!$this->dbname) {
-            throw new \Exception('error#-99 : no dbname');
-        } else if (!$this->tbname) {
-            throw new \Exception('error#-98 : no tbname');
-        }
     }
 
     private function _parseConfig($readOrWrite = self::WRITE_PORT)
     {
         static $cacheConfig = array();
+
+        if (!$this->dbname) {
+            throw new \Exception('error#-99 : no dbname');
+        } else if (!$this->tbname) {
+            throw new \Exception('error#-98 : no tbname');
+        }
 
         $link = sprintf('link_%s', $this->dbname);
         $key = $link . $readOrWrite;
@@ -163,6 +166,13 @@ class Model
         return $this;
     }
 
+    public function in($keys) {
+        if(is_array($keys) && $keys) {
+            $this->in_values = $keys;
+        }
+        return $this;
+    }
+
     public function find($key = '', $op = '=')
     {
         $this->_parseFilter();
@@ -171,8 +181,14 @@ class Model
             $this->_parsePartition($key);
         }
         try {
+            $in_key = null;
+            if($this->in_values) {
+                $this->limit = count($this->in_values) + 1;
+                $in_key = 0;
+            }
             $handlersocket = $handler->initOpenIndex(self::SELECT, $this->tbname, $this->index, $this->fields, $this->indexFilter);
-            $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter);
+            $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter, $in_key, $this->in_values);
+            $this->in_values = null;
             $this->isChangedPartition = false;
             if (false === $result) {
                 $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
@@ -182,6 +198,7 @@ class Model
         }
 
         $result = $this->_parseData($result);
+        $this->limit = 1;
         return $result;
     }
 

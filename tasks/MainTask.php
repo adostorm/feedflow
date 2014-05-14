@@ -8,4 +8,7 @@
 class MainTask extends \Phalcon\CLI\Task
 {
 
+    public function test0Action() {
+    }
+
 }

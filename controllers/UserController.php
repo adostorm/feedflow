@@ -17,16 +17,16 @@ class UserController extends CController
         if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
         } else if (empty($friend_uid)) {
-            throw new \Util\APIException(400, 2001, '好友ID不能为空');
+            throw new \Util\APIException(400, 2002, '好友ID不能为空');
         }
 
         $user = new UserRelationModel($this->getDI());
         $status = $user->checkRelation($friend_uid, $uid);
 
         if ($status == -98) {
-            throw new \Util\APIException(403, 2002, '不能关注自己');
+            throw new \Util\APIException(403, 2003, '不能关注自己');
         } else if ($status == -99 || $status == -1) {
-            throw new \Util\APIException(400, 2003, '不是好友');
+            throw new \Util\APIException(400, 2004, '不是好友');
         }
 
         switch ($status) {
@@ -104,14 +104,14 @@ class UserController extends CController
         if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
         } else if (empty($friend_uid)) {
-            throw new \Util\APIException(400, 2001, '好友ID不能为空');
+            throw new \Util\APIException(400, 2002, '好友ID不能为空');
         }
 
         $user = new UserRelationModel($this->getDI());
         $result = $user->createRelation($uid, $friend_uid);
 
         if ($result == -98) {
-            throw new \Util\APIException(403, 2002, '不能关注自己');
+            throw new \Util\APIException(403, 2003, '不能关注自己');
         }
 
         if (in_array($result, array(1, 2))) {
@@ -134,16 +134,16 @@ class UserController extends CController
         if (empty($uid)) {
             throw new \Util\APIException(400, 2001, '用户ID不能为空');
         } else if (empty($friend_uid)) {
-            throw new \Util\APIException(400, 2001, '好友ID不能为空');
+            throw new \Util\APIException(400, 2002, '好友ID不能为空');
         }
 
         $user = new UserRelationModel($this->getDI());
         $result = $user->removeRelation($uid, $friend_uid);
 
         if ($result == -98) {
-            throw new \Util\APIException(403, 2002, '不能关注自己');
+            throw new \Util\APIException(403, 2003, '不能关注自己');
         } else if ($result == -99) {
-            throw new \Util\APIException(403, 2003, '不是好友');
+            throw new \Util\APIException(403, 2004, '不是好友');
         }
 
         if (in_array($result, array(-1, 0))) {
@@ -155,6 +155,52 @@ class UserController extends CController
         $this->render(array(
             'status' => $result,
         ), $msg);
+    }
+
+    public function getRelations() {
+        $uid = $this->request->getQuery('uid', 'int');
+        $friend_uids = $this->request->getQuery('friend_uids');
+
+        if (empty($uid)) {
+            throw new \Util\APIException(400, 2001, '用户ID不能为空');
+        } else if (empty($friend_uids)) {
+            throw new \Util\APIException(400, 2002, '好友ID不能为空');
+        }
+
+        if(is_string($friend_uids)) {
+            $tmp = array();
+            $friend_uids = str_replace('，',',', $friend_uids);
+            foreach(explode(',', $friend_uids) as $_fuid) {
+                $tmp[] = $_fuid;
+            }
+            $friend_uids = $tmp;
+            unset($tmp);
+        }
+
+        $userRelationModel = new UserRelationModel($this->getDI());
+        $results = $userRelationModel->getInRelationList($uid, $friend_uids);
+
+        $rets = array();
+        if ($results) {
+            $results = $userRelationModel->transfer($results);
+            foreach ($friend_uids as $_uid) {
+                $rets[] = array(
+                    'uid' => (int) $_uid,
+                    'status' => isset($results[$_uid]) ? (int) $results[$_uid] : -1,
+                );
+            }
+        } else {
+            foreach ($friend_uids as $fid) {
+                $rets[] = array(
+                    'uid' => (int)$fid,
+                    'status' => -1
+                );
+            }
+        }
+
+        $this->render(array(
+            'status' => $rets,
+        ));
     }
 
 }

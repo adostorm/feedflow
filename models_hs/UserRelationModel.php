@@ -222,4 +222,32 @@ class UserRelationModel extends \HsMysql\Model
         return $results;
     }
 
+    public function getInRelationList($uid, $friend_uids)
+    {
+        if(is_string($friend_uids)) {
+            $tmp = array();
+            $friend_uids = str_replace('，',',', $friend_uids);
+            foreach(explode(',', $friend_uids) as $_fuid) {
+                $tmp[] = $_fuid;
+            }
+            $friend_uids = $tmp;
+            unset($tmp);
+        }
+        $results = $this->field('friend_uid,status')->filter(array(
+            array('status', '>=', 0),
+        ))->in($friend_uids)->setPartition($uid)->find();
+
+        return $results;
+    }
+
+    public function transfer($data) {
+        if(!$data) {
+            return $data;
+        }
+        $rets = array();
+        foreach($data as $row) {
+            $rets[$row['friend_uid']] = $row['status'];
+        }
+        return $rets;
+    }
 }

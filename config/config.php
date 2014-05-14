@@ -8,9 +8,7 @@ $config = new \Phalcon\Config(array(
         'modelsDir' => __DIR__ . '/../models/',
         'models_hsDir' => __DIR__ . '/../models_hs/',
         'viewsDir' => __DIR__ . '/../views/',
-        'baseUri' => '/pj_feed/',
         'path' => __DIR__ . '/../',
-        'log' => __DIR__ . '/../log/',
     ),
     'beanstalk' => array(
         'link_queue0' => array(

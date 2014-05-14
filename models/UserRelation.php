@@ -165,8 +165,5 @@ class UserRelation extends AdvModel
         return $results;
     }
 
-    public function getInRelationList()
-    {
 
-    }
 }

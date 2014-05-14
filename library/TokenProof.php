@@ -22,13 +22,15 @@ final class TokenProof
         $secrete = 'TO0nOIvhIFSitBMUgxlXbxmvris=';
         $token = \Util\Token::gen($params, $secrete);
         if ($app->request->get('showtoken')) {
-            echo '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />';
+            header('Content-Type: text/html; charset=utf8');
+            echo "<pre>";
             var_dump($app->request->get());
             var_dump($params);
             var_dump($_SERVER['REQUEST_URI']);
             var_dump(strtoupper($token));
             var_dump(time());
             var_dump((time() - (int)$app->request->get('t')));
+            echo "</pre>";
         }
         if ((time() - (int)$app->request->get('t')) < 1800) {
             if ($token != strtoupper($app->request->get('token'))) {
