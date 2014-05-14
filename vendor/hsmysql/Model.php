@@ -181,7 +181,7 @@ class Model
             $this->_parsePartition($key);
         }
         try {
-            $in_key = null;
+            $in_key = -1;
             if($this->in_values) {
                 $this->limit = count($this->in_values) + 1;
                 $in_key = 0;

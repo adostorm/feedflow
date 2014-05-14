@@ -15,7 +15,7 @@ class FeedController extends CController
         $count = $this->request->get('count', 'int');
 
         if (!$app_id || $app_id < 0) {
-            throw new \Util\APIException(400, 2101, 'app_id 不正确');
+            throw new \Util\APIException(200, 2101, 'app_id 不正确');
         }
 
         $page = $page > 0 ? $page : 1;
@@ -65,9 +65,9 @@ class FeedController extends CController
         $count = $this->request->get('count', 'int');
 
         if (!$app_id || $app_id < 0) {
-            throw new \Util\APIException(400, 2101, 'app_id 不正确');
+            throw new \Util\APIException(200, 2101, 'app_id 不正确');
         } else if (!$uid || $uid < 0) {
-            throw new \Util\APIException(400, 2102, 'uid 不正确');
+            throw new \Util\APIException(200, 2102, 'uid 不正确');
         }
 
         $page = $page > 0 ? $page : 1;
@@ -96,21 +96,21 @@ class FeedController extends CController
         $extends = $this->request->getPost('extends');
 
         if (!$app_id || $app_id < 0) {
-            throw new \Util\APIException(400, 2101, 'app_id 不正确');
+            throw new \Util\APIException(200, 2101, 'app_id 不正确');
         } else if (!$source_id || $source_id < 0) {
-            throw new \Util\APIException(400, 2102, 'source_id 不正确');
+            throw new \Util\APIException(200, 2102, 'source_id 不正确');
         } else if (!$object_type || $object_type < 0) {
-            throw new \Util\APIException(400, 2103, 'type 不正确');
+            throw new \Util\APIException(200, 2103, 'type 不正确');
         } else if (!$object_id || $object_id < 0) {
-            throw new \Util\APIException(400, 2104, 'type_id 不正确');
+            throw new \Util\APIException(200, 2104, 'type_id 不正确');
         } else if (!$author_id || $author_id < 0) {
-            throw new \Util\APIException(400, 2105, 'author_id 不正确');
+            throw new \Util\APIException(200, 2105, 'author_id 不正确');
         } else if (!$author || $author < 0) {
-            throw new \Util\APIException(400, 2106, 'author 不能为空');
+            throw new \Util\APIException(200, 2106, 'author 不能为空');
         } else if (!$content || $content < 0) {
-            throw new \Util\APIException(400, 2107, 'content 不能为空');
+            throw new \Util\APIException(200, 2107, 'content 不能为空');
         } else if (!$create_at || $create_at < 0) {
-            throw new \Util\APIException(400, 2108, 'create_time 不正确');
+            throw new \Util\APIException(200, 2108, 'create_time 不正确');
         }
 
         $queue = \Util\BStalkClient::getInstance($this->getDI());

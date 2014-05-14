@@ -14,16 +14,16 @@ $app->notFound(function () use ($app) {
     echo "<h1>404 NOT FOUND</h1>";
 });
 
-$app->before(function () use ($app) {
-    \Util\TokenProof::check($app);
-});
+//$app->before(function () use ($app) {
+//    \Util\TokenProof::check($app);
+//});
 
 $feedController = new FeedController();
 /**
  * test case :
  * curl -d "app_id=1&source_id=1&type=1&type_id=121212&author_id=1231&author=塑料袋&content=aaaaaaaaaa&create_time=12121231" http://feed.api.mama.com/feed/create
  */
-$app->post('/feed/create', array($feedController, 'create'));
+$app->post('/statuses/create', array($feedController, 'create'));
 
 /**
  * curl -i -X GET 'http://feed.api.mama.com/statuses/public_timeline?app_id=1'

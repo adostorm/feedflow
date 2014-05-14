@@ -9,6 +9,33 @@ class MainTask extends \Phalcon\CLI\Task
 {
 
     public function test0Action() {
+        $model = new \HsMysql\Model($this->getDI());
+        $model->dbname = 'db_countstate';
+        $model->tbname = 'user_count_0';
+        $model->index = 'PRIMARY';
+        $result = $model->field('uid,follow_count,fans_count,feed_count')->in(array(
+            1, 2, 121
+        ))->filter(array(
+                array('uid', '=', 2),
+            ))->find();
+        var_dump($result);
+    }
+
+    public function test1Action() {
+        $model = new \HsMysql\Model($this->getDI());
+        $model->dbname = 'db_userstate';
+        $model->tbname = 'user_relation_0';
+        $model->index = 'idx0';
+        $result = $model->field('friend_uid,status')->find(1);
+        var_dump($result);
+    }
+
+    public function test2Action() {
+        $hs = new \HandlerSocket('127.0.0.1', 9998);
+        $hs->auth('5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1');
+        $hs->openIndex(1, 'db_userstate', 'user_relation_0', 'idx0', 'friend_uid,status');
+        $result = $hs->executeSingle(1, '=', array(1), 1, 0,null,null,null,null);
+        var_dump($result);
     }
 
 }
