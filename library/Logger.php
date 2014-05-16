@@ -18,7 +18,7 @@ final class Logger
     {
         $path = ReadConfig::get('application.path', $di);
         $filename = empty($filename) ? date('Y-m-d') . '.log' : $filename;
-        $filepath = sprintf('%s/log/%s', $path, $filename);
+        $filepath = sprintf('%slog/%s', $path, $filename);
         if (!isset(self::$instances[$filepath])) {
             self::$instances[$filepath] = new FileAdapter($filepath);
         }

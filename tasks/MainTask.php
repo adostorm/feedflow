@@ -31,11 +31,18 @@ class MainTask extends \Phalcon\CLI\Task
     }
 
     public function test2Action() {
+        $u = new UserRelationModel($this->getDI());
+
+        $result = $u->getFansList(1);
+        var_dump($result);
+
+
+        exit;
         $hs = new \HandlerSocket('127.0.0.1', 9998);
         $hs->auth('5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1');
         $hs->openIndex(1, 'db_userstate', 'user_relation_0', 'idx0', 'friend_uid,status');
         $result = $hs->executeSingle(1, '=', array(1), 1, 0,null,null,null,null);
-        var_dump($result);
+        var_dump($result, $hs->getError());
     }
 
 }

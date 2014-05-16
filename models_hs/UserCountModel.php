@@ -58,7 +58,9 @@ class UserCountModel extends \HsMysql\Model
         'mode' => 'range',
         'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
             6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
-            13000000, 14000000, 15000000, 16000000, 17000000, 1000000000),
+            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
+            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
+            27000000, 28000000, 29000000, 30000000, 1000000000),
         'limit' => 399
     );
 
@@ -69,10 +71,14 @@ class UserCountModel extends \HsMysql\Model
     public function __construct($di)
     {
         parent::__construct($di, '');
-        $this->redis = \Util\RedisClient::getInstance($di);
-        $this->counts_key = \Util\ReadConfig::get('redis_cache_keys.user_id_counts', $di);
-        $this->cache_big_v_set = \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
-        $this->big_v_level = \Util\ReadConfig::get('setting.big_v_level', $this->getDi());
+        $this->redis =
+            \Util\RedisClient::getInstance($di);
+        $this->counts_key =
+            \Util\ReadConfig::get('redis_cache_keys.user_id_counts', $di);
+        $this->cache_big_v_set =
+            \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
+        $this->big_v_level =
+            \Util\ReadConfig::get('setting.big_v_level', $this->getDi());
     }
 
     /**
@@ -86,9 +92,12 @@ class UserCountModel extends \HsMysql\Model
         $counts = $this->redis->get($key);
 
         if (false === $counts) {
-            $counts = $this->field('uid,follow_count,fans_count,feed_count')->find($uid);
+            $counts = $this
+                ->field('uid,follow_count,fans_count,feed_count')
+                ->find($uid);
             if ($counts) {
-                $this->redis->set($key, msgpack_pack($counts),
+                $this->redis->set($key,
+                    msgpack_pack($counts),
                     \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
             }
         } else {
@@ -107,8 +116,8 @@ class UserCountModel extends \HsMysql\Model
     public function getCountByField($uid, $field)
     {
         $count = $this->getCountByUid($uid);
-        if (isset($count[0]) && isset($count[0][$field])) {
-            return (int)$count[0][$field];
+        if (isset($count[$field])) {
+            return (int)$count[$field];
         }
         return 0;
     }
@@ -164,7 +173,9 @@ class UserCountModel extends \HsMysql\Model
      */
     public function buildBigvCache()
     {
-        if (isset($this->partition['step']) && is_array($this->partition['step'])) {
+        if (isset($this->partition['step'])
+            && is_array($this->partition['step'])) {
+
             $temps = $this->partition['step'];
             array_pop($temps);
             foreach ($temps as $step) {
@@ -175,7 +186,8 @@ class UserCountModel extends \HsMysql\Model
                 if ($results) {
                     $this->redis->pipeline();
                     foreach ($results as $result) {
-                        $this->redis->hset($this->cache_big_v_set, $result['uid'], $result['fans_count']);
+                        $this->redis->hset($this->cache_big_v_set,
+                            $result['uid'], $result['fans_count']);
                     }
                     $this->redis->exec();
                 }

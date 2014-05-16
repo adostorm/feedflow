@@ -10,9 +10,9 @@ class FeedController extends CController
 
     public function getFeedListByAppId()
     {
-        $app_id = $this->request->get('app_id', 'int');
-        $page = $this->request->get('page', 'int');
-        $count = $this->request->get('count', 'int');
+        $app_id = $this->request->getQuery('app_id', 'int');
+        $page = $this->request->getQuery('page', 'int');
+        $count = $this->request->getQuery('count', 'int');
 
         if (!$app_id || $app_id < 0) {
             throw new \Util\APIException(200, 2101, 'app_id 不正确');
@@ -59,10 +59,10 @@ class FeedController extends CController
 
     public function getFeedListByUid()
     {
-        $app_id = $this->request->get('app_id', 'int');
-        $uid = $this->request->get('uid', 'int');
-        $page = $this->request->get('page', 'int');
-        $count = $this->request->get('count', 'int');
+        $app_id = $this->request->getQuery('app_id', 'int');
+        $uid = $this->request->getQuery('uid', 'int');
+        $page = $this->request->getQuery('page', 'int');
+        $count = $this->request->getQuery('count', 'int');
 
         if (!$app_id || $app_id < 0) {
             throw new \Util\APIException(200, 2101, 'app_id 不正确');

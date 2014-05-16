@@ -76,6 +76,12 @@ docs/_build/
 .phalcon/
 *.phalcon/
 log/
+.svn
+*.svn*
+.svn/
+*.svn*/
+
+
 
 .DS_Store
 .DS_Store?

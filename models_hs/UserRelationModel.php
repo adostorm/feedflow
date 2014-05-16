@@ -66,20 +66,25 @@ class UserRelationModel extends \HsMysql\Model
 
     /**
      * 检查好友关系， 直接查库
-     * 根据对方ID与用户自己ID
-     * @param $friend_uid
-     * @param $uid
+     * @param int $uid
+     * @param int $friend_uid
      * @return int
+     *      -98 : 表示 A和B不能自己关注自己
+     *      -99 : 表示 A和B不是好友关系，并且数据库不存在记录
+     *      -1  : 表示 A和B不是好友关系，但数据库存在记录，但A和B已经同时取消了关注
+     *       0  : 表示 A关注了B，但B没有关注A, 此时A是B的粉丝
+     *       1  : 表示 A关注了B，B也关注了A，此时A和B互粉，自动升级为好友关系
+     *       2  : 表示 B关注了A，但A没有关注B，此时B是A的粉丝
      */
-    public function checkRelation($friend_uid, $uid)
+    public function checkRelation($uid, $friend_uid)
     {
-        if ($friend_uid == $uid) {
+        if ($uid == $friend_uid) {
             return -98;
         }
         $this->setIsAssociate(false);
         $result = $this->field('status')->filter(array(
-            array('friend_uid', '=', $uid)
-        ))->find($friend_uid);
+            array('friend_uid', '=', $friend_uid)
+        ))->find($uid);
         return isset($result[0]) ? intval($result[0]) : -99;
     }
 
@@ -92,13 +97,13 @@ class UserRelationModel extends \HsMysql\Model
      */
     public function createRelation($uid, $friend_uid)
     {
-        $status = $this->checkRelation($friend_uid, $uid);
+        $status = $this->checkRelation($uid, $friend_uid);
 
         $tempStatus = $status;
 
         switch ($status) {
             case -99:
-                $status = 2;
+                $status = 0;
                 $time = time();
                 $this->insert(array(
                     'uid' => $uid,
@@ -109,13 +114,13 @@ class UserRelationModel extends \HsMysql\Model
                 $this->insert(array(
                     'uid' => $friend_uid,
                     'friend_uid' => $uid,
-                    'status' => $status,
+                    'status' => 2,
                     'create_at' => $time,
                 ));
                 break;
 
             case -1:
-                $status = 2;
+                $status = 0;
                 $this->filter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
@@ -124,11 +129,11 @@ class UserRelationModel extends \HsMysql\Model
                 $this->filter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
-                        'status' => $status
+                        'status' => 2
                     ));
                 break;
 
-            case 0:
+            case 2:
                 $status = 1;
                 $this->filter(array(
                     array('friend_uid', '=', $friend_uid),
@@ -138,15 +143,15 @@ class UserRelationModel extends \HsMysql\Model
                 $this->filter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
-                        'status' => $status
+                        'status' => 1
                     ));
                 break;
         }
 
-        if (in_array($tempStatus, array(-99, -1, 0))) {
+        if (in_array($tempStatus, array(-99, -1, 2))) {
             $countModel = new UserCountModel($this->getDi());
-            $countModel->updateCount($uid, 'follow_count', 1);
-            $countModel->updateCount($friend_uid, 'fans_count', 1);
+            $countModel->updateCount($uid, 'follow_count', 1, true);
+            $countModel->updateCount($friend_uid, 'fans_count', 1, true);
 
             $countModel->setBigv($friend_uid);
         }
@@ -161,7 +166,7 @@ class UserRelationModel extends \HsMysql\Model
         $tempStatus = $status;
 
         switch ($status) {
-            case 2:
+            case 0:
                 $status = -1;
                 $this->filter(array(
                     array('friend_uid', '=', $friend_uid),
@@ -171,12 +176,12 @@ class UserRelationModel extends \HsMysql\Model
                 $this->filter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
-                        'status' => $status
+                        'status' => -1
                     ));
                 break;
 
             case 1:
-                $status = 0;
+                $status = 2;
                 $this->filter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
@@ -185,16 +190,12 @@ class UserRelationModel extends \HsMysql\Model
                 $this->filter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
-                        'status' => $status
+                        'status' => 0
                     ));
-                break;
-
-            case -1:
-                $status = -99;
                 break;
         }
 
-        if (in_array($tempStatus, array(2, 1))) {
+        if (in_array($tempStatus, array(0, 1))) {
             $countModel = new UserCountModel($this->getDi());
             $countModel->updateCount($uid, 'follow_count', 1, false);
             $countModel->updateCount($friend_uid, 'fans_count', 1, false);

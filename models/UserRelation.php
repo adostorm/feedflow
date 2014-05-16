@@ -114,37 +114,20 @@ class UserRelation extends AdvModel
 
     public function getFollowList($uid, $offset = 0, $limit = 15)
     {
-        $this->init($uid);
-        $models = $this->find(array(
-            'uid=:uid: and status in (0, 1)',
-            'columns' => 'friend_uid',
-            'order' => 'create_at desc',
-            'limit' => array(
-                'number' => $limit,
-                'offset' => $offset,
-            ),
-            'bind' => array(
-                'uid' => $uid,
-            ),
-        ));
-
-        $results = array();
-        if ($models->getFirst()) {
-            foreach ($models as $model) {
-                $results[] = $model->friend_uid;
-            }
-        }
-
-        return $results;
+        return $this->_common($uid, array(0, 1), $offset, $limit);
     }
 
 
     public function getFansList($uid, $offset = 0, $limit = 15)
     {
+        return $this->_common($uid, array(1, 2), $offset, $limit);
+    }
+
+    private function _common($uid, $status=array(), $offset = 0, $limit = 15) {
         $this->init($uid);
         $models = $this->find(array(
-            'uid=:uid: and status in (1,2)',
-            'columns' => 'friend_uid',
+            'uid=:uid: and status in ('.implode(',',$status).')',
+            'columns' => 'friend_uid, status, create_at',
             'order' => 'create_at desc',
             'limit' => array(
                 'number' => $limit,
@@ -158,7 +141,11 @@ class UserRelation extends AdvModel
         $results = array();
         if ($models->getFirst()) {
             foreach ($models as $model) {
-                $results[] = $model->friend_uid;
+                $results[] = array(
+                    'uid'=>(int) $model->friend_uid,
+                    'relation'=>(int) $model->status,
+                    'create_at'=>(int) $model->create_at,
+                );
             }
         }
 
