@@ -4,7 +4,7 @@ USE `test`$$
 
 DROP PROCEDURE IF EXISTS `delete_table`$$
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `delete_table`(
+CREATE DEFINER=`Jerry`@`localhost` PROCEDURE `delete_table`(
 	_dbName VARCHAR(30), 
 	_tbPrefix VARCHAR(30),
 	_offset SMALLINT,

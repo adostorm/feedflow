@@ -110,8 +110,8 @@ class Model
             $slave = ReadConfig::get("{$link}.slave", $this->di)->toArray();
 
             if ($readOrWrite == self::READ_PORT && $slave) {
-                $randSlave = array_rand($slave);
-                $config['host'] = $randSlave['host'];
+                $rnd = array_rand($slave);
+                $config['host'] = $slave[$rnd];
                 $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
                 $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
             } else if ($readOrWrite == self::READ_PORT) {
