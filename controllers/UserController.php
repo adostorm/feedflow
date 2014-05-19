@@ -102,6 +102,7 @@ class UserController extends CController
         $userCountModel = new UserCountModel($this->getDI());
         $total = $userCountModel->getCountByField($uid, 'follow_count');
 
+        $result = array();
         if ($total > 0) {
             $user = new UserRelation();
             $result = $user->getFollowList($uid, $offset, $count);

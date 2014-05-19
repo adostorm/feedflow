@@ -70,7 +70,7 @@ class PushTask extends \Phalcon\CLI\Task
                     $job->delete();
                 }
 
-                sleep(10);
+                sleep(3);
             }
         } catch (\Phalcon\Exception $e) {
             if ($this->q) {

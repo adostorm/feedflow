@@ -55,12 +55,14 @@ class UserFeedModel extends \HsMysql\Model
      */
     public function create($data)
     {
-        return $this->insert(array(
+        $result = $this->insert(array(
             'app_id' => (int)$data['app_id'],
             'uid' => (int)$data['uid'],
             'feed_id' => (int)$data['feed_id'],
             'create_at' => (int)$data['create_at'],
         ));
+
+        return $result;
     }
 
 }

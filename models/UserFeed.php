@@ -129,7 +129,7 @@ class UserFeed extends AdvModel
         if ($results->getFirst()) {
             $feedHsModel = new FeedModel($this->getDI());
             foreach ($results as $result) {
-                $rets[] = $feedHsModel->getById($result->feed_id);
+                $rets[] = $feedHsModel->getById($result->uid, $result->feed_id);
             }
         }
 

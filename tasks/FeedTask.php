@@ -53,7 +53,7 @@ class FeedTask extends \Phalcon\CLI\Task
                     $feed_id = $model->create($new);
 
                     if ($feed_id) {
-                        $this->q2->choose(sprintf($this->k2, $feed_id % 10));
+                        $this->q2->choose(sprintf($this->k2, 1/*$feed_id % 10*/));
                         $this->q2->put(sprintf('%d|%d|%d|%d'
                             , $new['app_id'], $new['author_id'], $feed_id, $new['create_at']));
 
@@ -68,7 +68,7 @@ class FeedTask extends \Phalcon\CLI\Task
                         $job->bury();
                     }
                 }
-                sleep(10);
+                sleep(3);
             }
         } catch (\Phalcon\Exception $e) {
             if ($this->q1) {

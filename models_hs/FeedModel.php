@@ -39,10 +39,10 @@ class FeedModel extends \HsMysql\Model
     public $partition = array(
         'field' => 'author_id',
         'mode' => 'range',
-        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
-            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
-            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
-            2000000, 1000000000),
+        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
+            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 120000000,
+            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
+            20000000, 1000000000),
         'limit' => 399
     );
 
@@ -70,10 +70,14 @@ class FeedModel extends \HsMysql\Model
      */
     public function create($data)
     {
+
         $feedIndexModel = new FeedIndexModel($this->getDi());
         $feed_id = $feedIndexModel->create();
 
+
+
         if ($feed_id) {
+
             $userFeedModel = new UserFeedModel($this->getDi());
             $isSuccess = $userFeedModel->create(array(
                 'app_id' => $data['app_id'],
@@ -93,7 +97,7 @@ class FeedModel extends \HsMysql\Model
                 'content' => strval($data['content']),
                 'create_at' => (int)$data['create_at'],
                 'attachment' => strval($data['attachment']),
-                'extends' => strval($data['extends']),
+                'extends' => msgpack_pack($data['extends']),
             ));
 
             if ($isOk && $isSuccess) {
@@ -117,10 +121,11 @@ class FeedModel extends \HsMysql\Model
      *      1, 先取缓存
      *      2, 如果缓存过期，则从数据库取
      *      3, 从数据库取出数据后，整个数据使用msgpack_pack压缩后再写入Redis缓存
+     * @param $uid
      * @param $feed_id
      * @return array
      */
-    public function getById($feed_id)
+    public function getById($uid, $feed_id)
     {
         $key = sprintf($this->cache_key, $feed_id);
 
@@ -132,7 +137,7 @@ class FeedModel extends \HsMysql\Model
                 'object_type', 'object_id',
                 'author_id', 'author', 'content',
                 'create_at', 'attachment', 'extends');
-            $result = $this->field($fields)->find($feed_id);
+            $result = $this->field($fields)->setPartition($uid)->find($feed_id);
 
             if ($result) {
                 $redis->set($key, msgpack_pack($result),

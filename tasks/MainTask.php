@@ -31,6 +31,26 @@ class MainTask extends \Phalcon\CLI\Task
     }
 
     public function test2Action() {
+        $data = array(
+           "app_id"=>1,
+            "source_id"=>1,
+            "object_type"=>2,
+            "object_id"=>1341918,
+            "author_id"=>8048111,
+            "author"=>"xjay",
+            "content"=>"测试发帖。。。",
+            "create_at"=>1376712770,
+            "attachment"=>"",
+            "extends"=>array('fid'=>1),
+        );
+        $feed = new FeedModel($this->getDI());
+        $r = $feed->create($data);
+
+
+//        $data = $feed->field('extends')->setPartition(8048111)->find(36);
+//        var_dump(msgpack_unpack($data['extends']));
+
+        exit;
         $u = new UserRelationModel($this->getDI());
 
         $result = $u->getFansList(1);
