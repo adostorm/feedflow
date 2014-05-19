@@ -110,7 +110,7 @@ $config = new \Phalcon\Config(array(
         'allfeeds' => 'queue_allfeeds',
         'pushfeeds' => 'queue_%d_feeds',
     ),
-
+ 
 ));
 
 return $config;

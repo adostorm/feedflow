@@ -65,7 +65,7 @@ docs/_build/
 
 
 *.log
-*.sql
+#*.sql
 *.sqlite
 
 
