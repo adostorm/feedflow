@@ -1,7 +1,8 @@
 <?php
 
 use Phalcon\DI\FactoryDefault\CLI as CliDI,
-    Phalcon\CLI\Console as ConsoleApp;
+    Phalcon\CLI\Console as ConsoleApp,
+    Phalcon\Db\Adapter\Pdo\Mysql as DbAdapter;
 
 define('VERSION', '1.0.0');
 
@@ -42,8 +43,24 @@ if (is_readable(APPLICATION_PATH . '/config/config.php')) {
 
     foreach ($config as $k => $v) {
         if (0 === stripos($k, 'link_')) {
-            $di->set($k, function () use ($v) {
-                return new \Phalcon\Db\Adapter\Pdo\Mysql(array(
+            if(isset($v->slave)) {
+                $slaves = $v->slave->toArray();
+                if($slaves) {
+                    foreach($slaves as $i=>$host) {
+                        $di->set(sprintf('%s_read_%d', $k, $i), function () use ($host, $v) {
+                            return new DbAdapter(array(
+                                "host" => $host,
+                                "username" => $v->username,
+                                "password" => $v->password,
+                                "dbname" => $v->dbname
+                            ));
+                        });
+                    }
+
+                }
+            }
+            $di->setShared($k, function () use ($v) {
+                return new DbAdapter(array(
                     "host" => $v->host,
                     "username" => $v->username,
                     "password" => $v->password,
@@ -53,6 +70,8 @@ if (is_readable(APPLICATION_PATH . '/config/config.php')) {
         }
     }
 }
+
+//var_dump($di);
 
 //Create a console application
 $console = new ConsoleApp();

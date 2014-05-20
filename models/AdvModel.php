@@ -17,7 +17,14 @@ class AdvModel extends \Phalcon\Mvc\Model
     public function init($id)
     {
         $this->_parsePartition($id);
-        $this->setConnectionService($this->dbname);
+        $conf = \Util\ReadConfig::get($this->dbname, $this->getDI());
+        if(isset($conf->slave) && $slaves = $conf->slave->toArray()) {
+            $rnd = array_rand($slaves);
+            $this->setWriteConnectionService($this->dbname);
+            $this->setReadConnectionService($this->dbname.'_read'.'_'.$rnd);
+        }else {
+            $this->setConnectionService($this->dbname);
+        }
         $this->setSource($this->tbname);
     }
 

@@ -1,3 +1,12 @@
+############# 创建数据库 ################
+
+#CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_countstate` /*!40100 DEFAULT CHARACTER SET utf8 */;
+#CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_feedcontent` /*!40100 DEFAULT CHARACTER SET utf8 */;
+#CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_feedstate` /*!40100 DEFAULT CHARACTER SET utf8 */;
+#CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_userfeed` /*!40100 DEFAULT CHARACTER SET utf8 */;
+#CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_userstate` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+
 ############### 一, 创建db_countstate的表##########################
 
 -- 创建feed_index

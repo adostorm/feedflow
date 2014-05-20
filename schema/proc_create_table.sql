@@ -4,7 +4,7 @@ USE `test`$$
 
 DROP PROCEDURE IF EXISTS `create_table`$$
 
-CREATE DEFINER=`lijiajia`@`localhost` PROCEDURE `create_table`(
+CREATE DEFINER=`Jerry`@`localhost` PROCEDURE `create_table`(
 	_dbName VARCHAR(30), 
 	_tbPrefix VARCHAR(30),
 	_offset SMALLINT,
