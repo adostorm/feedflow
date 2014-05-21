@@ -89,6 +89,8 @@ class Model
             $this->dbname = $dbname;
             $this->tbname = $tbname;
         }
+
+
     }
 
     private function _parseConfig($readOrWrite = self::WRITE_PORT)
@@ -296,12 +298,16 @@ class Model
 
     public function _parsePartition($id)
     {
+//       echo "id=".$id;echo PHP_EOL;
         static $cacheTable = array();
-
-        if (!isset($cacheTable[$this->tbname]) && is_array($this->partition) && $this->partition) {
+        static $_tmp_tb = '';
+        if (!isset($cacheTable[$this->tbname.$id]) && is_array($this->partition) && $this->partition) {
+            if(!$_tmp_tb) {
+                $_tmp_tb = $this->tbname;
+            }
             if ($this->partition['mode'] == 'mod') {
                 $ret = $id % $this->partition['step'];
-                $this->tbname .= '_' . $ret;
+                $this->tbname = $_tmp_tb.'_' . $ret;
             } else if ($this->partition['mode'] == 'range') {
                 $steps = $this->partition['step'];
                 $count = sizeof($steps);
@@ -314,12 +320,14 @@ class Model
                         break;
                     }
                 }
-                $this->tbname .= '_' . $num;
+                $this->tbname = $_tmp_tb.'_' . $num;
 
-                $cacheTable[$this->tbname] = $this->tbname;
+                $cacheTable[$this->tbname.$id] = $this->tbname;
 
                 if ($num > $this->partition['limit']) {
-                    $this->dbname .= '_' . floor($num / $this->partition['limit']);
+                    $this->dbname = sprintf('%s_%d', $this->dbname, $num / $this->partition['limit']);
+                } else {
+                    $this->dbname = sprintf('%s', $this->dbname);
                 }
             }
         }

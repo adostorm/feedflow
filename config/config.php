@@ -94,13 +94,16 @@ $config = new \Phalcon\Config(array(
         'app_id_feeds' => 'cache:app:%d:feeds',
         'friend_appid_id_feeds' => 'cache:app:%d:friend:%d:feeds',
         'friend_appid_id_feeds_timeline' => 'cache:app:%d:friend:%d:timeline',
+        'friend_appid_id_feeds_timeline_ttl'=>'cache:app:%d:friend:%d:timeline_ttl',
         'me_appid_id_feeds' => 'cache:app:%d:me:%d:feeds',
         'user_id_counts' => 'cache:user:%d:counts',
+        'user_appid_id_feedcounts' => 'cache:app:%d:user:%d:feedcounts',
         'feed_id_content' => 'cache:feed:%d:content',
         'follow_uid_list' => 'cache:follow:%d:list',
         'fans_uid_list' => 'cache:fans:%d:list',
         'feed_uid_push' => 'cache:feed:%d:push',
         'big_v_set' => 'cache:big_v_set',
+
     ),
     'queue_connect' => array(
         'host' => '127.0.0.1',

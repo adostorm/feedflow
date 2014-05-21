@@ -212,7 +212,17 @@ class UserRelationModel extends \HsMysql\Model
             array('status', '>=', 0),
             array('status', '<=', 1),
         ))->limit($offset, $limit)->find($uid);
-        return $results;
+
+        $rets = array();
+        if($results) {
+            foreach($results as $result) {
+                $rets[] = $result['friend_uid'];
+            }
+        }
+
+        unset($results);
+
+        return $rets;
     }
 
     public function getFansList($uid, $offset = 0, $limit = 15)
@@ -236,7 +246,7 @@ class UserRelationModel extends \HsMysql\Model
         }
         $results = $this->field('friend_uid,status')->filter(array(
             array('status', '>=', 0),
-        ))->in($friend_uids)->setPartition($uid)->find();
+        ))->in($friend_uids)->setPartition($uid)->find($uid);
 
         return $results;
     }

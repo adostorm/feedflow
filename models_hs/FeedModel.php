@@ -74,10 +74,7 @@ class FeedModel extends \HsMysql\Model
         $feedIndexModel = new FeedIndexModel($this->getDi());
         $feed_id = $feedIndexModel->create();
 
-
-
         if ($feed_id) {
-
             $userFeedModel = new UserFeedModel($this->getDi());
             $isSuccess = $userFeedModel->create(array(
                 'app_id' => $data['app_id'],
@@ -103,6 +100,12 @@ class FeedModel extends \HsMysql\Model
             if ($isOk && $isSuccess) {
                 $count = new UserCountModel($this->getDi());
                 $count->updateCount($data['author_id'], 'feed_count', 1, true);
+
+                $userFeedCountModel = new UserFeedCountModel($this->getDi());
+                $userFeedCountModel->updateCount($data['app_id'], $data['author_id'], array(
+                    'feed_count'=>1,
+                    'unread_count'=>1,
+                ), 0, true);
 
                 $key = sprintf($this->cache_key, $feed_id);
                 $redis = \Util\RedisClient::getInstance($this->getDi());
@@ -140,6 +143,7 @@ class FeedModel extends \HsMysql\Model
             $result = $this->field($fields)->setPartition($uid)->find($feed_id);
 
             if ($result) {
+                $result['extends'] = msgpack_unpack($result['extends']);
                 $redis->set($key, msgpack_pack($result),
                     \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
             }

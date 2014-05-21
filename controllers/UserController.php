@@ -186,11 +186,11 @@ class UserController extends CController
     public function getRelations()
     {
         $uid = $this->request->getQuery('uid', 'int');
-        $friend_uids = $this->request->getQuery('friend_uids');
+        $friend_uids = trim($this->request->getQuery('friend_uids'));
 
         if (empty($uid) || $uid < 0) {
             throw new \Util\APIException(200, 2001, '用户ID不能为空或不能为负值');
-        } else if (empty($friend_uid) || $friend_uid < 0) {
+        } else if (empty($friend_uids)) {
             throw new \Util\APIException(200, 2002, '好友ID不能为空或不能为负值');
         }
 
@@ -212,14 +212,14 @@ class UserController extends CController
             $results = $userRelationModel->transfer($results);
             foreach ($friend_uids as $_uid) {
                 $rets[] = array(
-                    'uid' => (int)$_uid,
-                    'status' => isset($results[$_uid]) ? (int)$results[$_uid] : -1,
+                    'uid' => (int) $_uid,
+                    'status' => isset($results[$_uid]) ? (int) $results[$_uid] : -1,
                 );
             }
         } else {
             foreach ($friend_uids as $_uid) {
                 $rets[] = array(
-                    'uid' => (int)$_uid,
+                    'uid' => (int) $_uid,
                     'status' => -1
                 );
             }
@@ -258,7 +258,7 @@ class UserController extends CController
                 $result = $userCountModel->getCountByUid(intval($uid));
                 if ($result) {
                     $rets[] = array(
-                        'uid' => (int)$uid,
+                        'uid' => (int) $uid,
                         'follow_count' => (int) $result['follow_count'],
                         'fans_count' => (int) $result['follow_count'],
                         'feed_count' => (int) $result['fans_count'],
@@ -276,7 +276,39 @@ class UserController extends CController
         }
 
         $this->render($rets);
+    }
 
+    public function getFeedCount() {
+        $app_id = (int) $this->request->getQuery('app_id');
+        $uid = (int) $this->request->getQuery('uid');
+
+        if (empty($uid)) {
+            throw new \Util\APIException(200, 2001, '用户ID不能为空或不能为负值');
+        } else if (empty($app_id)) {
+            throw new \Util\APIException(200, 2002, '应用ID不能为空或不能为负值');
+        }
+
+        $userFeedCountModel = new UserFeedCountModel($this->getDI());
+        $result = $userFeedCountModel->getCountByUid($app_id, $uid);
+
+        if ($result) {
+            $rets = array(
+                'uid' => (int) $uid,
+                'app_id' => (int) $result['app_id'],
+                'feed_count' => (int) $result['feed_count'],
+                'unread_count' => (int) $result['unread_count'],
+            );
+            unset($result);
+        } else {
+            $rets = array(
+                'uid' => (int) $uid,
+                'app_id' => $app_id,
+                'feed_count' => 0,
+                'unread_count' => 0,
+            );
+        }
+
+        $this->render($rets);
     }
 
 }

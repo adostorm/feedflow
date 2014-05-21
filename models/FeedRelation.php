@@ -18,11 +18,15 @@ class FeedRelation extends AdvModel
 
     public $cache_friend = '';
 
-    public $cache_timeline = 0;
+    public $cache_timeline = '';
+
+    public $cache_timeline_ttl = '';
 
     public $redis = null;
 
     public $dbname = 'db_feedstate';
+
+    public $tbname  = 'feed_relation';
 
     public $partition = array(
         'field' => 'uid',
@@ -106,6 +110,8 @@ class FeedRelation extends AdvModel
             \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds', $this->getDI());
         $this->cache_timeline =
             \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds_timeline', $this->getDI());
+        $this->cache_timeline_ttl =
+            \Util\ReadConfig::get('redis_cache_keys.friend_appid_id_feeds_timeline_ttl', $this->getDI());
     }
 
 
@@ -126,20 +132,19 @@ class FeedRelation extends AdvModel
             $timeline = 0;
         }
 
-        $expire = \Util\ReadConfig::get('setting.cache_timeout_t2', $this->getDI());
-        if ($offset == 0 && ((time() - $timeline) > $expire)) {
-            $this->redis->delete($key);
-            $userFeed = new UserFeed();
-            $models = $userFeed->getListByAppIdAndUid($app_id, $uid, array(
-                'offset' => 0,
-                'limit' => 200,
-                'timeline' => $timeline,
-                'fields' => 'app_id,uid,feed_id,create_at',
-                'order' => 'create_at desc'
+        $timeline_ttl_key = sprintf($this->cache_timeline_ttl, $app_id, $uid);
+        $timeline_ttl = (int) $this->redis->ttl($timeline_ttl_key);
+
+        if ($offset == 0 && $timeline_ttl <= 0) {
+            $models = $this->getRelationFeedList($app_id, $uid, 0, 200, array(
+                'create_at'=>$timeline,
             ));
 
             if ($model_length = count($models)) {
-                $this->redis->set($this->cache_timeline, $models[$model_length - 1]['create_at']);
+                $expire = \Util\ReadConfig::get('setting.cache_timeout_t2', $this->getDI());
+                $this->redis->set($timeline_ttl_key, 1, $expire);
+                $this->redis->set($timeline_key
+                    , $models[$model_length - 1]['create_at']);
                 $this->redis->pipeline();
                 foreach ($models as $model) {
                     $this->redis->zadd($key, -$model['create_at']
@@ -156,7 +161,7 @@ class FeedRelation extends AdvModel
             $countF = 1001;
 
             while ($follow_ids = $userRelation->getFollowList($uid, $offsetF, $countF)) {
-                $offsetF = ($pageF - 1) * $countF - 1;
+                $offsetF = ($pageF - 1) * ($countF - 1);
 
                 $bigvs = array_merge($bigvs, $userCount->diffBigv($follow_ids));
 
@@ -167,9 +172,9 @@ class FeedRelation extends AdvModel
 
             if (is_array($bigvs) && $bigvs) {
                 $bigvs = array_unique($bigvs);
-
+                $userFeed = new UserFeed();
                 foreach ($bigvs as $_uid) {
-                    $bigFriendFeeds = $userFeed->getListByAppIdAndUid($app_id, $_uid, array(
+                    $bigFriendFeeds = $userFeed->getFeedListByAppIdAndUid($app_id, $_uid, array(
                         'offset' => 0,
                         'limit' => 20,
                         'timeline' => $timeline,
@@ -201,8 +206,42 @@ class FeedRelation extends AdvModel
             foreach ($results as $result) {
                 $rets[] = msgpack_unpack($result);
             }
+
+            $userFeedCountModel = new UserFeedCountModel($this->getDI());
+            $userFeedCountModel->update($uid, array(
+                'unread_count' => 0
+            ));
         }
         unset($results);
+
+        return $rets;
+    }
+
+    public function getRelationFeedList($app_id, $uid, $offset=0, $limit=10, $extras=array()) {
+        $this->init($uid);
+        $results = $this->find(array(
+            'app_id=:app_id: and uid=:uid: and create_at>=:create_at:',
+            'columns' => 'app_id,uid,feed_id,create_at',
+            'order' => 'create_at desc',
+            'limit' => array(
+                'offset' => $offset,
+                'number' => $limit,
+            ),
+            'bind' => array(
+                'uid' => $uid,
+                'app_id' => $app_id,
+                'create_at' => isset($extras['create_at']) ? (int) $extras['create_at'] : 0,
+            ),
+        ));
+
+        $rets = array();
+
+        if ($results->getFirst()) {
+            $feedHsModel = new FeedModel($this->getDI());
+            foreach ($results as $result) {
+                $rets[] = $feedHsModel->getById($result->uid, $result->feed_id);
+            }
+        }
 
         return $rets;
     }

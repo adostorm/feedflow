@@ -30,8 +30,8 @@ class FeedController extends CController
 
         $max = 200;
 
+        $total = $redis->zcard($key);
         if ($limit > $max) {
-            $total = $redis->zcard($key);
             if ($total > $max) {
                 $total = $max;
             }
@@ -44,17 +44,21 @@ class FeedController extends CController
             $limit = $total - 1;
         }
 
-        $results = $redis->zrange($key, $offset, $limit);
-
         $rets = array();
-        if ($results) {
-            foreach ($results as $result) {
-                $rets[] = msgpack_unpack($result);
+        if($total > 0) {
+            $results = $redis->zrange($key, $offset, $limit);
+            if ($results) {
+                foreach ($results as $result) {
+                    $rets[] = msgpack_unpack($result);
+                }
+                unset($results);
             }
-            unset($results);
         }
 
-        $this->render($rets);
+        $this->render(array(
+            'list'=>$rets,
+            'total'=>$total,
+        ));
     }
 
     public function getFeedListByUid()
@@ -78,20 +82,23 @@ class FeedController extends CController
 
         $feedRelation = new FeedRelation();
         $result = $feedRelation->getFollowFeedsByUid($app_id, $uid, $offset, $limit);
-
-        $this->render($result);
+        $total = (int) $feedRelation->getFollowFeedsCount($app_id, $uid);
+        $this->render(array(
+            'list' => $result,
+            'total' => $total,
+        ));
     }
 
     public function create()
     {
         $app_id = (int)$this->request->getPost('app_id');
         $source_id = (int)$this->request->getPost('source_id');
-        $object_type = (int)$this->request->getPost('type');
-        $object_id = (int)$this->request->getPost('type_id');
+        $object_type = (int)$this->request->getPost('object_type');
+        $object_id = (int)$this->request->getPost('object_id');
         $author_id = (int)$this->request->getPost('author_id');
         $author = $this->request->getPost('author');
         $content = $this->request->getPost('content');
-        $create_at = $this->request->getPost('create_time');
+        $create_at = $this->request->getPost('create_at');
         $attachment = $this->request->getPost('attachment');
         $extends = $this->request->getPost('extends');
 
@@ -100,9 +107,9 @@ class FeedController extends CController
         } else if (!$source_id || $source_id < 0) {
             throw new \Util\APIException(200, 2102, 'source_id 不正确');
         } else if (!$object_type || $object_type < 0) {
-            throw new \Util\APIException(200, 2103, 'type 不正确');
+            throw new \Util\APIException(200, 2103, 'object_type 不正确');
         } else if (!$object_id || $object_id < 0) {
-            throw new \Util\APIException(200, 2104, 'type_id 不正确');
+            throw new \Util\APIException(200, 2104, 'object_id 不正确');
         } else if (!$author_id || $author_id < 0) {
             throw new \Util\APIException(200, 2105, 'author_id 不正确');
         } else if (!$author || $author < 0) {
@@ -110,7 +117,7 @@ class FeedController extends CController
         } else if (!$content || $content < 0) {
             throw new \Util\APIException(200, 2107, 'content 不能为空');
         } else if (!$create_at || $create_at < 0) {
-            throw new \Util\APIException(200, 2108, 'create_time 不正确');
+            throw new \Util\APIException(200, 2108, 'create_at 不正确');
         }
 
         $queue = \Util\BStalkClient::getInstance($this->getDI());

@@ -26,12 +26,25 @@ SET @sql = "
 	  `uid` int(11) unsigned NOT NULL COMMENT '会员ID',
 	  `follow_count` mediumint(8) DEFAULT '0' COMMENT '关注数',
 	  `fans_count` mediumint(8) DEFAULT '0' COMMENT '粉丝数',
-	  `feed_count` mediumint(8) DEFAULT '0' COMMENT '动态数',
 	  PRIMARY KEY (`uid`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='会员计数器'
 ";
 CALL test.create_table('db_countstate', 'user_count', 0, 20, TRUE, @sql);
 #CALL test.delete_table('db_countstate', 'user_count', 0, 20, );
+
+
+-- 创建user_feed_count
+SET @sql = "
+	(
+  `uid` int(10) unsigned NOT NULL COMMENT '会员ID',
+  `app_id` tinyint(4) NOT NULL COMMENT '应用ID',
+  `feed_count` mediumint(9) DEFAULT '0' COMMENT '动态数',
+  `unread_count` mediumint(9) DEFAULT '0' COMMENT '未读动态数',
+  UNIQUE KEY `idx0` (`uid`,`app_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8  COMMENT='会员Feed计数器'
+";
+CALL test.create_table('db_countstate', 'user_feed_count', 0, 20, TRUE, @sql);
+#CALL test.delete_table('db_countstate', 'user_feed_count', 0, 20, );
 
 ###############  二,  创建db_feedcontent的表##########################
 

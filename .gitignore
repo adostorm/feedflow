@@ -91,3 +91,7 @@ log/
 Icon?
 ehthumbs.db
 Thumbs.db
+
+
+Token.php
+TokenProof.php

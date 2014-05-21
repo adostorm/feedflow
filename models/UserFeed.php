@@ -96,7 +96,7 @@ class UserFeed extends AdvModel
     }
 
 
-    public function getListByAppIdAndUid($app_id, $uid, $extends = array())
+    public function getFeedListByAppIdAndUid($app_id, $uid, $extends = array())
     {
         $this->init($uid);
         $default = array(

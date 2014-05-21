@@ -58,7 +58,11 @@ $app->get('/friendships/followers', array($userController, 'getFansList'));
  */
 $app->get('/friendships/friends', array($userController, 'getFollowList'));
 
+$app->get('/friendships/statuses', array($userController, 'getRelations'));
+
 /**
  * curl -i -X GET 'http://feed.api.mama.cn/users/counts?uid=1'
  */
 $app->get('/users/counts', array($userController, 'getCounts'));
+
+$app->get('/remind/feed_count', array($userController, 'getFeedCount'));

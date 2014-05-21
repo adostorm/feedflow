@@ -25,17 +25,21 @@ class AdvModel extends \Phalcon\Mvc\Model
         }else {
             $this->setConnectionService($this->dbname);
         }
+//        echo $this->tbname;
         $this->setSource($this->tbname);
     }
 
     private function _parsePartition($id)
     {
-        static $cachePhTables = array();
-
-        if (!isset($cachePhTables[$this->tbname]) && is_array($this->partition) && $this->partition) {
+        static $cacheTable = array();
+        static $_tmp_tb = '';
+        if (!isset($cacheTable[$this->tbname.$id]) && is_array($this->partition) && $this->partition) {
+            if(!$_tmp_tb) {
+                $_tmp_tb = $this->tbname;
+            }
             if ($this->partition['mode'] == 'mod') {
                 $ret = $id % $this->partition['step'];
-                $this->tbname .= '_' . $ret;
+                $this->tbname = $_tmp_tb.'_' . $ret;
             } else if ($this->partition['mode'] == 'range') {
                 $steps = $this->partition['step'];
                 $count = sizeof($steps);
@@ -48,9 +52,9 @@ class AdvModel extends \Phalcon\Mvc\Model
                         break;
                     }
                 }
-                $this->tbname .= '_' . $num;
+                $this->tbname = $_tmp_tb.'_' . $num;
 
-                $cachePhTables[$this->tbname] = $this->tbname;
+                $cacheTable[$this->tbname.$id] = $this->tbname;
 
                 if ($num > $this->partition['limit']) {
                     $this->dbname = sprintf('link_%s_%d', $this->dbname, $num / $this->partition['limit']);
