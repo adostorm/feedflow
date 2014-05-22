@@ -61,6 +61,12 @@ class UserFeedCountModel extends \HsMysql\Model {
             \Util\ReadConfig::get('redis_cache_keys.user_appid_id_feedcounts', $di);
     }
 
+    /**
+     * 获取 动态数，未读动态数
+     * @param $app_id
+     * @param $uid
+     * @return array
+     */
     public function getCountByUid($app_id, $uid)
     {
         $key = sprintf($this->counts_key, $app_id, $uid);
@@ -147,6 +153,12 @@ class UserFeedCountModel extends \HsMysql\Model {
         return $result;
     }
 
+    /**
+     * 重置未读动态数为 0
+     * @param $app_id
+     * @param $uid
+     * @return mixed
+     */
     public function resetUnReadCount($app_id, $uid) {
         $result = $this->filter(array(
             array('app_id', '=', $app_id),

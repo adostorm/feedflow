@@ -40,9 +40,10 @@ class FeedModel extends \HsMysql\Model
         'field' => 'author_id',
         'mode' => 'range',
         'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
-            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 120000000,
+            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
             13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
-            20000000, 1000000000),
+            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
+            27000000, 28000000, 29000000, 30000000, 1000000000),
         'limit' => 399
     );
 
@@ -84,7 +85,7 @@ class FeedModel extends \HsMysql\Model
             ));
 
             $isOk = $this->insert(array(
-                'feed_id' => $feed_id,
+                'feed_id' => (int)$feed_id,
                 'app_id' => (int)$data['app_id'],
                 'source_id' => (int)$data['source_id'],
                 'object_type' => (int)$data['object_type'],
@@ -98,13 +99,10 @@ class FeedModel extends \HsMysql\Model
             ));
 
             if ($isOk && $isSuccess) {
-                $count = new UserCountModel($this->getDi());
-                $count->updateCount($data['author_id'], 'feed_count', 1, true);
-
                 $userFeedCountModel = new UserFeedCountModel($this->getDi());
                 $userFeedCountModel->updateCount($data['app_id'], $data['author_id'], array(
-                    'feed_count'=>1,
-                    'unread_count'=>1,
+                    'feed_count' => 1,
+                    'unread_count' => 1,
                 ), 0, true);
 
                 $key = sprintf($this->cache_key, $feed_id);

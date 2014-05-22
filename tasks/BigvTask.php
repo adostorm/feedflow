@@ -16,6 +16,9 @@ class BigvTask extends \Phalcon\CLI\Task
         $this->_processQueue();
     }
 
+    /**
+     * 生成大V缓存
+     */
     private function _processQueue()
     {
         $userCountModel = new UserCountModel($this->getDI());

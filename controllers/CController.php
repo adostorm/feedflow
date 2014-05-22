@@ -8,6 +8,11 @@
 class CController extends \Phalcon\Mvc\Controller
 {
 
+    /**
+     * 统一输出
+     * @param $data
+     * @param string $message
+     */
     public function render($data, $message = 'OK')
     {
 

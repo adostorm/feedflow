@@ -8,27 +8,60 @@
 class UserRelation extends AdvModel
 {
 
+    /**
+     * 用户的ID
+     * @var int
+     */
     public $uid = 0;
 
+    /**
+     * 用户的ID
+     * @var int
+     */
     public $friend_uid = 0;
 
+    /**
+     * 好友关系的状态
+     * @var int
+     */
     public $status = 0;
 
+    /**
+     * 创建时间
+     * @var int
+     */
     public $create_at = 0;
 
+    /**
+     * 权重
+     * @var int
+     */
     public $weight = 0;
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_userstate';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname = 'user_relation';
 
+    /**
+     * 分库分表规则
+     * @var array
+     */
     public $partition = array(
         'field' => 'uid',
         'mode' => 'range',
-        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
-            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
-            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
-            2000000, 1000000000),
+        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
+            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
+            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
+            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
+            27000000, 28000000, 29000000, 30000000, 1000000000),
         'limit' => 399
     );
 
@@ -112,12 +145,26 @@ class UserRelation extends AdvModel
         return (int)$this->weight;
     }
 
+    /**
+     * 好友列表
+     * @param $uid
+     * @param int $offset
+     * @param int $limit
+     * @return array
+     */
     public function getFollowList($uid, $offset = 0, $limit = 15)
     {
         return $this->_common($uid, array(0, 1), $offset, $limit);
     }
 
 
+    /**
+     * 粉丝列表
+     * @param $uid
+     * @param int $offset
+     * @param int $limit
+     * @return array
+     */
     public function getFansList($uid, $offset = 0, $limit = 15)
     {
         return $this->_common($uid, array(1, 2), $offset, $limit);

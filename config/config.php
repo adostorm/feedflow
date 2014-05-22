@@ -114,6 +114,9 @@ $config = new \Phalcon\Config(array(
         'pushfeeds' => 'queue_%d_feeds',
     ),
 
+    'api_key'=>'F5T7OhcalDMBtgPAOsqPGE0ScSo=',
+
+
 ));
 
 return $config;

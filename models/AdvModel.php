@@ -29,6 +29,10 @@ class AdvModel extends \Phalcon\Mvc\Model
         $this->setSource($this->tbname);
     }
 
+    /**
+     * 分库分表规则
+     * @param $id
+     */
     private function _parsePartition($id)
     {
         static $cacheTable = array();

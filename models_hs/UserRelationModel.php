@@ -45,10 +45,11 @@ class UserRelationModel extends \HsMysql\Model
     public $partition = array(
         'field' => 'uid',
         'mode' => 'range',
-        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
-            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
-            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
-            2000000, 1000000000),
+        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
+            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
+            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
+            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
+            27000000, 28000000, 29000000, 30000000, 1000000000),
         'limit' => 399
     );
 
@@ -90,7 +91,10 @@ class UserRelationModel extends \HsMysql\Model
 
     /**
      * 创建好友关系
-     *      1,
+     *
+     *       0  : 表示 A关注了B，但B没有关注A, 此时A是B的粉丝
+     *       1  : 表示 A关注了B，B也关注了A，此时A和B互粉，自动升级为好友关系
+     *
      * @param $uid
      * @param $friend_uid
      * @return int
@@ -159,6 +163,16 @@ class UserRelationModel extends \HsMysql\Model
         return $status;
     }
 
+    /**
+     * 解除好友关系
+     *
+     *    -1  : 表示 A和B不是好友关系，但数据库存在记录，但A和B已经同时取消了关注
+     *    2  : 表示 B关注了A，但A没有关注B，此时B是A的粉丝
+     *
+     * @param $uid
+     * @param $friend_uid
+     * @return int
+     */
     public function removeRelation($uid, $friend_uid)
     {
         $status = $this->checkRelation($friend_uid, $uid);
@@ -206,6 +220,13 @@ class UserRelationModel extends \HsMysql\Model
         return $status;
     }
 
+    /**
+     * 关注列表
+     * @param $uid
+     * @param int $offset
+     * @param int $limit
+     * @return array
+     */
     public function getFollowList($uid, $offset = 0, $limit = 15)
     {
         $results = $this->field('friend_uid')->filter(array(
@@ -225,6 +246,13 @@ class UserRelationModel extends \HsMysql\Model
         return $rets;
     }
 
+    /**
+     * 粉丝列表
+     * @param $uid
+     * @param int $offset
+     * @param int $limit
+     * @return array
+     */
     public function getFansList($uid, $offset = 0, $limit = 15)
     {
         $results = $this->field('friend_uid')->filter(array(
@@ -233,6 +261,13 @@ class UserRelationModel extends \HsMysql\Model
         return $results;
     }
 
+    /**
+     * 好友关系
+     *      1:N关系
+     * @param $uid
+     * @param $friend_uids
+     * @return array
+     */
     public function getInRelationList($uid, $friend_uids)
     {
         if(is_string($friend_uids)) {
@@ -251,6 +286,11 @@ class UserRelationModel extends \HsMysql\Model
         return $results;
     }
 
+    /**
+     * 数据转换, 变成键值关联数据
+     * @param $data
+     * @return array
+     */
     public function transfer($data) {
         if(!$data) {
             return $data;
