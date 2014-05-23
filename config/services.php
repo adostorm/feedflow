@@ -30,29 +30,20 @@ $di['url'] = function () use ($config) {
 
 foreach ($config as $k => $v) {
     if (0 === stripos($k, 'link_')) {
-        if(isset($v->slave)) {
-            $slaves = $v->slave->toArray();
+        if(isset($v->slaves)) {
+            $slaves = $v->slaves->toArray();
             if($slaves) {
-                foreach($slaves as $i=>$host) {
-                    $di->set(sprintf('%s_read_%d', $k, $i), function () use ($host, $v) {
-                        return new DbAdapter(array(
-                            "host" => $host,
-                            "username" => $v->username,
-                            "password" => $v->password,
-                            "dbname" => $v->dbname
-                        ));
+                foreach($slaves as $i=>$slave) {
+                    echo sprintf('%s_read_%d', $k, $i);echo PHP_EOL;
+                    $di->set(sprintf('%s_read_%d', $k, $i), function () use ($slave) {
+                        return new DbAdapter($slave);
                     });
                 }
 
             }
         }
         $di->set($k, function () use ($v) {
-            return new DbAdapter(array(
-                "host" => $v->host,
-                "username" => $v->username,
-                "password" => $v->password,
-                "dbname" => $v->dbname
-            ));
+            return new DbAdapter($v);
         });
     }
 }

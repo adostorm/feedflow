@@ -8,33 +8,77 @@
 class FeedRelation extends AdvModel
 {
 
+    /**
+     * 用户ID
+     * @var int
+     */
     public $uid = 0;
 
+    /**
+     * 用户ID
+     * @var int
+     */
     public $friend_uid = 0;
 
+    /**
+     * Feed系统feed的ID
+     * @var int
+     */
     public $feed_id = 0;
 
+    /**
+     * 权重
+     * @var int
+     */
     public $weight = 0;
 
+    /**
+     * 好友缓存的Key
+     * @var string
+     */
     public $cache_friend = '';
 
+    /**
+     * 用户动态缓存key
+     * @var string
+     */
     public $cache_timeline = '';
 
+    /**
+     * 用户动态缓存过期时间
+     * @var string
+     */
     public $cache_timeline_ttl = '';
 
+    /**
+     * 缓存Client
+     * @var null
+     */
     public $redis = null;
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_feedstate';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname  = 'feed_relation';
 
+    /** 分表规则
+     * @var array
+     */
     public $partition = array(
         'field' => 'uid',
         'mode' => 'range',
-        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
-            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
-            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
-            2000000, 1000000000),
+        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
+            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
+            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
+            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
+            27000000, 28000000, 29000000, 30000000, 1000000000),
         'limit' => 399
     );
 
@@ -115,6 +159,12 @@ class FeedRelation extends AdvModel
     }
 
 
+    /**
+     * 获得Redis用户动态的总数, 最大值为200
+     * @param $app_id
+     * @param $uid
+     * @return mixed
+     */
     public function getFollowFeedsCount($app_id, $uid)
     {
         $key = sprintf($this->cache_friend, $app_id, $uid);
@@ -122,6 +172,20 @@ class FeedRelation extends AdvModel
     }
 
 
+    /**
+     * 根据app的Id，用户ID获取用户的动态数据
+     *
+     * 推拉结合:
+     *  读取用户接收到的数据+大V的数据
+     *
+     * 建立缓存，按时间自动排序
+     *
+     * @param $app_id
+     * @param $uid
+     * @param int $offset
+     * @param int $limit
+     * @return array
+     */
     public function getFollowFeedsByUid($app_id, $uid, $offset = 0, $limit = 15)
     {
         $key = sprintf($this->cache_friend, $app_id, $uid);
@@ -217,6 +281,15 @@ class FeedRelation extends AdvModel
         return $rets;
     }
 
+    /**
+     * 好友的动态
+     * @param $app_id
+     * @param $uid
+     * @param int $offset
+     * @param int $limit
+     * @param array $extras
+     * @return array
+     */
     public function getRelationFeedList($app_id, $uid, $offset=0, $limit=10, $extras=array()) {
         $this->init($uid);
         $results = $this->find(array(

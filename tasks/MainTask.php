@@ -62,4 +62,9 @@ class MainTask extends \Phalcon\CLI\Task
         var_dump($results);
     }
 
+    public function test2Action() {
+        $userFeed = new UserFeed();
+        $userFeed->getFeedListByAppIdAndUid(1, 1);
+    }
+
 }

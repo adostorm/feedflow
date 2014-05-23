@@ -17,18 +17,19 @@ class AdvModel extends \Phalcon\Mvc\Model
     public function init($id)
     {
         $this->_parsePartition($id);
+        $this->setWriteConnectionService($this->dbname);
         $conf = \Util\ReadConfig::get($this->dbname, $this->getDI());
-        if(isset($conf->slave) && $slaves = $conf->slave->toArray()) {
+        if(isset($conf->slaves) && $slaves = $conf->slaves->toArray()) {
             $rnd = array_rand($slaves);
-            $this->setWriteConnectionService($this->dbname);
-            $this->setReadConnectionService($this->dbname.'_read'.'_'.$rnd);
-        }else {
-            $this->setConnectionService($this->dbname);
+            $this->setReadConnectionService($this->dbname.'_read_'.$rnd);
         }
-//        echo $this->tbname;
         $this->setSource($this->tbname);
     }
 
+    /**
+     * 分库分表规则
+     * @param $id
+     */
     private function _parsePartition($id)
     {
         static $cacheTable = array();

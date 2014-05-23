@@ -34,6 +34,11 @@ class PushTask extends \Phalcon\CLI\Task
         $this->bigv_key = \Util\ReadConfig::get('setting.big_v_level', $di);
     }
 
+    /**
+     * 推送给粉丝，
+     *  如果是当前用户是大V则不推送，
+     *  直接将数据保存到用户与Feed的关系表
+     */
     private function _processQueue()
     {
         $this->q->choose($this->k);
@@ -77,7 +82,9 @@ class PushTask extends \Phalcon\CLI\Task
                 $this->q->disconnect();
             }
             echo $e->getMessage();
-            exit(1);
+
+            sleep(3);
+            $this->runAction(array($this->num));
         }
     }
 

@@ -41,34 +41,24 @@ if (is_readable(APPLICATION_PATH . '/config/config.php')) {
     $config = include APPLICATION_PATH . '/config/config.php';
     $di->set('config', $config);
 
-    foreach ($config as $k => $v) {
-        if (0 === stripos($k, 'link_')) {
-            if(isset($v->slave)) {
-                $slaves = $v->slave->toArray();
-                if($slaves) {
-                    foreach($slaves as $i=>$host) {
-                        $di->set(sprintf('%s_read_%d', $k, $i), function () use ($host, $v) {
-                            return new DbAdapter(array(
-                                "host" => $host,
-                                "username" => $v->username,
-                                "password" => $v->password,
-                                "dbname" => $v->dbname
-                            ));
-                        });
-                    }
-
-                }
-            }
-            $di->setShared($k, function () use ($v) {
-                return new DbAdapter(array(
-                    "host" => $v->host,
-                    "username" => $v->username,
-                    "password" => $v->password,
-                    "dbname" => $v->dbname
-                ));
-            });
-        }
-    }
+//    foreach ($config as $k => $v) {
+//        if (0 === stripos($k, 'link_')) {
+//            if(isset($v->slaves)) {
+//                $slaves = $v->slaves->toArray();
+//                if($slaves) {
+//                    foreach($slaves as $i=>$slave) {
+//                        $di->set(sprintf('%s_read_%d', $k, $i), function () use ($slave) {
+//                            return new DbAdapter($slave);
+//                        });
+//                    }
+//
+//                }
+//            }
+//            $di->set($k, function () use ($v) {
+//                return new DbAdapter($v);
+//            });
+//        }
+//    }
 }
 
 //var_dump($di);

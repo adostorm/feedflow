@@ -8,25 +8,54 @@
 class UserFeed extends AdvModel
 {
 
+    /**
+     * Feed系统feed的ID
+     * @var int
+     */
     public $feed_id = 0;
 
+    /**
+     * 应用ID
+     * @var int
+     */
     public $app_id = 0;
 
+    /**
+     * 用户的ID
+     * @var int
+     */
     public $uid = 0;
 
+    /**
+     * 创建时间
+     * @var int
+     */
     public $create_at = 0;
 
+    /**
+     * 数据库名称
+     * @var string
+     */
     public $dbname = 'db_userfeed';
 
+    /**
+     * 表名称
+     * @var string
+     */
     public $tbname = 'user_feed';
 
+    /**
+     * 分库分表规则
+     * @var array
+     */
     public $partition = array(
         'field' => 'uid',
         'mode' => 'range',
-        'step' => array(1, 100000, 200000, 300000, 400000, 500000,
-            600000, 700000, 800000, 900000, 1000000, 1100000, 1200000,
-            1300000, 1400000, 1500000, 1600000, 1700000, 1800000, 1900000,
-            2000000, 1000000000),
+        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
+            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
+            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
+            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
+            27000000, 28000000, 29000000, 30000000, 1000000000),
         'limit' => 399
     );
 
@@ -96,6 +125,14 @@ class UserFeed extends AdvModel
     }
 
 
+    /**
+     * 查询用户自己的动态
+     *      拉：大V的动态
+     * @param $app_id
+     * @param $uid
+     * @param array $extends
+     * @return array
+     */
     public function getFeedListByAppIdAndUid($app_id, $uid, $extends = array())
     {
         $this->init($uid);
@@ -106,7 +143,6 @@ class UserFeed extends AdvModel
             'fields' => 'app_id,uid,feed_id,create_at',
             'order' => 'create_at desc'
         );
-
         $conditions = array_merge($default, $extends);
 
         $results = $this->find(array(

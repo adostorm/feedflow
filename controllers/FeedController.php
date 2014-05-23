@@ -8,6 +8,10 @@
 class FeedController extends CController
 {
 
+    /**
+     * 全站动态
+     * @throws Util\APIException
+     */
     public function getFeedListByAppId()
     {
         $app_id = $this->request->getQuery('app_id', 'int');
@@ -31,6 +35,7 @@ class FeedController extends CController
         $max = 200;
 
         $total = $redis->zcard($key);
+
         if ($limit > $max) {
             if ($total > $max) {
                 $total = $max;
@@ -61,6 +66,10 @@ class FeedController extends CController
         ));
     }
 
+    /**
+     * 用户动态
+     * @throws Util\APIException
+     */
     public function getFeedListByUid()
     {
         $app_id = $this->request->getQuery('app_id', 'int');
@@ -89,6 +98,10 @@ class FeedController extends CController
         ));
     }
 
+    /**
+     * 创建动态
+     * @throws Util\APIException
+     */
     public function create()
     {
         $app_id = (int)$this->request->getPost('app_id');

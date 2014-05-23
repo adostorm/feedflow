@@ -8,6 +8,16 @@
 class UserController extends CController
 {
 
+    /**
+     * 判断是否好友关系
+     *      -1 不是好友
+     *      2 粉丝
+     *      1 互粉
+     *      0 关注
+     *      default 其它异常
+     *
+     * @throws Util\APIException
+     */
     public function isFriend()
     {
         $uid = $this->request->getPost('uid', 'int');
@@ -52,6 +62,11 @@ class UserController extends CController
         ), $msg);
     }
 
+
+    /**
+     * 粉丝列表
+     * @throws Util\APIException
+     */
     public function getFansList()
     {
         $uid = $this->request->getQuery('uid', 'int');
@@ -84,6 +99,10 @@ class UserController extends CController
         ));
     }
 
+    /**
+     * 关注列表
+     * @throws Util\APIException
+     */
     public function getFollowList()
     {
         $uid = $this->request->getQuery('uid', 'int');
@@ -114,6 +133,10 @@ class UserController extends CController
         ));
     }
 
+    /**
+     * 添加关注
+     * @throws Util\APIException
+     */
     public function addFollow()
     {
         $app_id = $this->request->getPost('app_id', 'int');
@@ -149,6 +172,10 @@ class UserController extends CController
         ), $msg);
     }
 
+    /**
+     * 取消关注
+     * @throws Util\APIException
+     */
     public function unFollow()
     {
         $uid = $this->request->getPost('uid', 'int');
@@ -183,6 +210,10 @@ class UserController extends CController
         ), $msg);
     }
 
+    /**
+     * 取得用户关系
+     * @throws Util\APIException
+     */
     public function getRelations()
     {
         $uid = $this->request->getQuery('uid', 'int');
@@ -228,6 +259,10 @@ class UserController extends CController
         $this->render($rets);
     }
 
+    /**
+     * 获取 关注数、粉丝数
+     * @throws Util\APIException
+     */
     public function getCounts()
     {
         $uids = $this->request->getQuery('uids');
@@ -261,7 +296,6 @@ class UserController extends CController
                         'uid' => (int) $uid,
                         'follow_count' => (int) $result['follow_count'],
                         'fans_count' => (int) $result['follow_count'],
-                        'feed_count' => (int) $result['fans_count'],
                     );
                     unset($result);
                 } else {
@@ -269,7 +303,6 @@ class UserController extends CController
                         'uid' => (int) $uid,
                         'follow_count' => 0,
                         'fans_count' => 0,
-                        'feed_count' => 0,
                     );
                 }
             }
@@ -278,6 +311,10 @@ class UserController extends CController
         $this->render($rets);
     }
 
+    /**
+     * 获取 动态数 未读动态数
+     * @throws Util\APIException
+     */
     public function getFeedCount() {
         $app_id = (int) $this->request->getQuery('app_id');
         $uid = (int) $this->request->getQuery('uid');

@@ -107,19 +107,23 @@ class Model
         $key = $link . $readOrWrite;
         if (is_object($this->di) && !isset($cacheConfig[$key])) {
             $config = array();
-            $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
-            $config['host'] = ReadConfig::get("{$link}.host", $this->di);
-            $slave = ReadConfig::get("{$link}.slave", $this->di)->toArray();
-
-            if ($readOrWrite == self::READ_PORT && $slave) {
-                $rnd = array_rand($slave);
-                $config['host'] = $slave[$rnd];
-                $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
-                $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
-            } else if ($readOrWrite == self::READ_PORT) {
-                $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
-                $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
+            if ($readOrWrite == self::READ_PORT) {
+                $slaves = ReadConfig::get("{$link}.slaves", $this->di)->toArray();
+                if($slaves) {
+                    $rnd = array_rand($slaves);
+                    $config['host'] = $slaves[$rnd]['host'];
+                    $config['port'] = $slaves[$rnd]['port'];
+                    $config['dbname'] = $slaves[$rnd]['dbname'];
+                    $config['password'] = $slaves[$rnd]['hs_read_passwd'];
+                } else {
+                    $config['host'] = ReadConfig::get("{$link}.host", $this->di);
+                    $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
+                    $config['password'] = ReadConfig::get("{$link}.hs_read_passwd", $this->di);
+                    $config['port'] = ReadConfig::get("{$link}.hs_read_port", $this->di);
+                }
             } else if ($readOrWrite == self::WRITE_PORT) {
+                $config['host'] = ReadConfig::get("{$link}.host", $this->di);
+                $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
                 $config['port'] = ReadConfig::get("{$link}.hs_write_port", $this->di);
                 $config['password'] = ReadConfig::get("{$link}.hs_write_passwd", $this->di);
             }

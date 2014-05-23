@@ -149,8 +149,6 @@ class UserCountModel extends \HsMysql\Model
                 'uid' => (int)$uid,
                 'follow_count' => 0,
                 'fans_count' => 0,
-                'feed_count' => 0,
-                'unread_feed_count'=>0,
             );
 
             if (true === $incr) {

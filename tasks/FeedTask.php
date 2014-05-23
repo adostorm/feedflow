@@ -35,6 +35,13 @@ class FeedTask extends \Phalcon\CLI\Task
         $this->cache_key = \Util\ReadConfig::get('redis_cache_keys.app_id_feeds', $di);
     }
 
+    /**
+     * feed出队，
+     * 1， 生成feed内容
+     * 2， 更新用户feed数量
+     * 3， 加入全站动态缓存
+     * 4， 分发到10个队列，为了推送给粉丝
+     */
     private function _processQueue()
     {
         $this->q1->choose($this->k1);
@@ -78,7 +85,10 @@ class FeedTask extends \Phalcon\CLI\Task
                 $this->q2->disconnect();
             }
             echo $e->getMessage();
-            exit(1);
+
+
+            sleep(3);
+            $this->runAction();
         }
     }
 

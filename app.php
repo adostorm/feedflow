@@ -15,7 +15,7 @@ $app->notFound(function () use ($app) {
 });
 
 $app->before(function () use ($app) {
-    \Util\TokenProof::check($app);
+    \Util\TokenProof::check($app, \Util\ReadConfig::get('api_key', $app->getDI()));
 });
 
 $feedController = new FeedController();
