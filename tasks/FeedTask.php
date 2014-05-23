@@ -85,7 +85,10 @@ class FeedTask extends \Phalcon\CLI\Task
                 $this->q2->disconnect();
             }
             echo $e->getMessage();
-            exit(1);
+
+
+            sleep(3);
+            $this->runAction();
         }
     }
 

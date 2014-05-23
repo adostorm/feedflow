@@ -82,7 +82,9 @@ class PushTask extends \Phalcon\CLI\Task
                 $this->q->disconnect();
             }
             echo $e->getMessage();
-            exit(1);
+
+            sleep(3);
+            $this->runAction(array($this->num));
         }
     }
 

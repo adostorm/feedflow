@@ -35,6 +35,7 @@ class FeedController extends CController
         $max = 200;
 
         $total = $redis->zcard($key);
+
         if ($limit > $max) {
             if ($total > $max) {
                 $total = $max;

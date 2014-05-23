@@ -60,11 +60,13 @@ final class RedisClient
         try {
             $this->redis = new \Redis();
             $this->redis->connect($this->host, $this->port);
+//            var_dump($this->host, $this->port, $this->password);
             if ($this->password) {
                 $status = $this->auth($this->password);
                 if (false === $status) {
-                    throw new Exception('redis auth error : authenticate fail' . PHP_EOL);
-                    exit(1);
+                    echo 'redis auth error : authenticate fail';
+                    $this->logger->log('redis auth error : authenticate fail');
+                    exit;
                 }
             }
             $this->isConnected = true;
