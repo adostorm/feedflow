@@ -43,10 +43,10 @@ class MainTask extends \Phalcon\CLI\Task
 
     public function test1Action() {
         $userFeedCountModel = new UserFeedCountModel($this->getDi());
-        $userFeedCountModel->updateCount(1, 1, array(
-            'feed_count'=>1,
-            'unread_count'=>1,
-        ), 0, true);
+//        $userFeedCountModel->updateCount(1, 1, array(
+//            'feed_count'=>1,
+//            'unread_count'=>1,
+//        ), 0, true);
 
         $results = $userFeedCountModel->getCountByUid(1, 1);
 

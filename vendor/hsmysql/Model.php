@@ -230,7 +230,6 @@ class Model
         try {
             $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $pairs['fields']);
             $result = $handlersocket->executeInsert(self::INSERT, $pairs['values']);
-            echo $this->tbname;echo PHP_EOL;
             if (false === $result) {
                 $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
