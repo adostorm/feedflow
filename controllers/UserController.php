@@ -285,7 +285,6 @@ class UserController extends CController
             $uids = $tmp;
             unset($tmp);
         }
-
         $rets = array();
         if($uids) {
             $userCountModel = new UserCountModel($this->getDI());

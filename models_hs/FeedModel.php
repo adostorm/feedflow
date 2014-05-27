@@ -98,6 +98,8 @@ class FeedModel extends \HsMysql\Model
                 'extends' => msgpack_pack($data['extends']),
             ));
 
+            var_dump($isOk , $isSuccess);
+
             if ($isOk && $isSuccess) {
                 $userFeedCountModel = new UserFeedCountModel($this->getDi());
                 $userFeedCountModel->updateCount($data['app_id'], $data['author_id'], array(

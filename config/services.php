@@ -34,7 +34,6 @@ foreach ($config as $k => $v) {
             $slaves = $v->slaves->toArray();
             if($slaves) {
                 foreach($slaves as $i=>$slave) {
-                    echo sprintf('%s_read_%d', $k, $i);echo PHP_EOL;
                     $di->set(sprintf('%s_read_%d', $k, $i), function () use ($slave) {
                         return new DbAdapter($slave);
                     });

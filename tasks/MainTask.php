@@ -67,4 +67,17 @@ class MainTask extends \Phalcon\CLI\Task
         $userFeed->getFeedListByAppIdAndUid(1, 1);
     }
 
+    public function test3Action() {
+        $handler = new \HandlerSocket('localhost', '9999');
+        $handler->open_index(1, 'db_countstate', 'user_count_0', 'PRIMARY', array(''));
+//        $handler->executeSingle(1, );
+    }
+
+    public function test4Action() {
+        $m = new TestModel($this->getDI());
+//        $m->getCountByUid(1);
+//        $m->addCount();
+        $m->updateCount(11);
+    }
+
 }

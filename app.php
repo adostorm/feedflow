@@ -14,9 +14,9 @@ $app->notFound(function () use ($app) {
     echo "<h1>404 NOT FOUND</h1>";
 });
 
-$app->before(function () use ($app) {
-    \Util\TokenProof::check($app, \Util\ReadConfig::get('api_key', $app->getDI()));
-});
+//$app->before(function () use ($app) {
+//    \Util\TokenProof::check($app, \Util\ReadConfig::get('api_key', $app->getDI()));
+//});
 
 $feedController = new FeedController();
 /**
@@ -26,7 +26,7 @@ $feedController = new FeedController();
 $app->post('/statuses/create', array($feedController, 'create'));
 
 /**
- * curl -i -X GET 'http://feed.api.mama.com/statuses/public_timeline?app_id=1'
+ * curl -i -X GET 'http://feed.api.mama.cn/statuses/public_timeline?app_id=1'
  */
 $app->get('/statuses/public_timeline', array($feedController, 'getFeedListByAppId'));
 
@@ -61,7 +61,7 @@ $app->get('/friendships/friends', array($userController, 'getFollowList'));
 $app->get('/friendships/statuses', array($userController, 'getRelations'));
 
 /**
- * curl -i -X GET 'http://feed.api.mama.cn/users/counts?uid=1'
+ * curl -i -X GET 'http://feed.api.mama.cn/users/counts?uids=1'
  */
 $app->get('/users/counts', array($userController, 'getCounts'));
 

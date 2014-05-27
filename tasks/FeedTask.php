@@ -56,8 +56,8 @@ class FeedTask extends \Phalcon\CLI\Task
                     $old = $job->getBody();
                     $new = msgpack_unpack($old);
 
-                    var_dump($new);
                     $feed_id = $model->create($new);
+                    var_dump($new, $feed_id);
 
                     if ($feed_id) {
                         $this->q2->choose(sprintf($this->k2, 1/*$feed_id % 10*/));

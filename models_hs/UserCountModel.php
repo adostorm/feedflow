@@ -87,25 +87,25 @@ class UserCountModel extends \HsMysql\Model
      * @return array
      */
     public function getCountByUid($uid)
-{
-    $key = sprintf($this->counts_key, $uid);
-    $counts = $this->redis->get($key);
+    {
+        $key = sprintf($this->counts_key, $uid);
+        $counts = $this->redis->get($key);
 
-    if (false === $counts) {
-        $counts = $this
-            ->field('uid,follow_count,fans_count')
-            ->find($uid);
-        if ($counts) {
-            $this->redis->set($key,
-                msgpack_pack($counts),
-                \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+        if (false === $counts) {
+            $counts = $this
+                ->field('uid,follow_count,fans_count')
+                ->find($uid);
+            if ($counts) {
+                $this->redis->set($key,
+                    msgpack_pack($counts),
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+            }
+        } else {
+            $counts = msgpack_unpack($counts);
         }
-    } else {
-        $counts = msgpack_unpack($counts);
-    }
 
-    return $counts;
-}
+        return $counts;
+    }
 
     /**
      * 根据Key获取计数器里面的数字

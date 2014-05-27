@@ -26,11 +26,12 @@ $config = new \Phalcon\Config(array(
         'big_v_level' => 300,
     ),
     'link_db_countstate' => array(
-        'host' => '127.0.0.1',
+        'host' => '192.168.139.151',
         'port'=>3306,
         'username' => 'root',
         'password' => '123456',
         'dbname' => 'db_countstate',
+        'charset'   =>'utf8',
 
         'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
@@ -39,21 +40,12 @@ $config = new \Phalcon\Config(array(
 
         'slaves'=>array(
             array(
-                'host' => '127.0.0.1',
+                'host' => '192.168.139.151',
                 'port'=>3306,
                 'username' => 'root',
                 'password' => '123456',
                 'dbname' => 'db_countstate',
-
-                'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
-                'hs_read_port' => 9998,
-            ),
-            array(
-                'host' => '127.0.0.2',
-                'port'=>3306,
-                'username' => 'root',
-                'password' => '123456',
-                'dbname' => 'db_countstate',
+                'charset'   =>'utf8',
 
                 'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
                 'hs_read_port' => 9998,
@@ -61,35 +53,12 @@ $config = new \Phalcon\Config(array(
         ),
     ),
     'link_db_feedcontent' => array(
-        'host' => '127.0.0.1',
+        'host' => '192.168.139.151',
         'port'=>3306,
         'username' => 'root',
         'password' => '123456',
         'dbname' => 'db_feedcontent',
-
-        'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
-        'hs_write_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
-        'hs_read_port' => 9998,
-        'hs_write_port' => 9999,
-    ),
-    'link_db_feedstate' => array(
-        'host' => '127.0.0.1',
-        'port'=>3306,
-        'username' => 'root',
-        'password' => '123456',
-        'dbname' => 'db_feedstate',
-
-        'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
-        'hs_write_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
-        'hs_read_port' => 9998,
-        'hs_write_port' => 9999,
-    ),
-    'link_db_userfeed' => array(
-        'host' => '127.0.0.1',
-        'port'=>3306,
-        'username' => 'root',
-        'password' => '123456',
-        'dbname' => 'db_userfeed',
+        'charset'   =>'utf8',
 
         'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
@@ -98,21 +67,66 @@ $config = new \Phalcon\Config(array(
 
         'slaves'=>array(
             array(
-                'host' => '127.0.0.1',
+                'host' => '192.168.139.151',
                 'port'=>3306,
                 'username' => 'root',
                 'password' => '123456',
-                'dbname' => 'db_userfeed',
+                'dbname' => 'db_countstate',
+                'charset'   =>'utf8',
 
                 'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
                 'hs_read_port' => 9998,
             ),
+        ),
+    ),
+    'link_db_feedstate' => array(
+        'host' => '192.168.139.151',
+        'port'=>3306,
+        'username' => 'root',
+        'password' => '123456',
+        'dbname' => 'db_feedstate',
+        'charset'   =>'utf8',
+
+        'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_write_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_read_port' => 9998,
+        'hs_write_port' => 9999,
+
+        'slaves'=>array(
             array(
-                'host' => '127.0.0.2',
+                'host' => '192.168.139.151',
                 'port'=>3306,
-                'username' => 'rootx',
-                'password' => '123456x',
-                'dbname' => 'db_userfeedx',
+                'username' => 'root',
+                'password' => '123456',
+                'dbname' => 'db_countstate',
+                'charset'   =>'utf8',
+
+                'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+                'hs_read_port' => 9998,
+            ),
+        ),
+    ),
+    'link_db_userfeed' => array(
+        'host' => '192.168.139.151',
+        'port'=>3306,
+        'username' => 'root',
+        'password' => '123456',
+        'dbname' => 'db_userfeed',
+        'charset'   =>'utf8',
+
+        'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_write_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+        'hs_read_port' => 9998,
+        'hs_write_port' => 9999,
+
+        'slaves'=>array(
+            array(
+                'host' => '192.168.139.151',
+                'port'=>3306,
+                'username' => 'root',
+                'password' => '123456',
+                'dbname' => 'db_userfeed',
+                'charset'   =>'utf8',
 
                 'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
                 'hs_read_port' => 9998,
@@ -120,16 +134,31 @@ $config = new \Phalcon\Config(array(
         ),
     ),
     'link_db_userstate' => array(
-        'host' => '127.0.0.1',
+        'host' => '192.168.139.151',
         'port'=>3306,
         'username' => 'root',
         'password' => '123456',
         'dbname' => 'db_userstate',
+        'charset'   =>'utf8',
 
         'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_write_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
         'hs_read_port' => 9998,
         'hs_write_port' => 9999,
+
+        'slaves'=>array(
+            array(
+                'host' => '192.168.139.151',
+                'port'=>3306,
+                'username' => 'root',
+                'password' => '123456',
+                'dbname' => 'db_countstate',
+                'charset'   =>'utf8',
+
+                'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
+                'hs_read_port' => 9998,
+            ),
+        ),
     ),
     'redis_connect' => array(
         'host' => '127.0.0.1',
@@ -149,7 +178,6 @@ $config = new \Phalcon\Config(array(
         'fans_uid_list' => 'cache:fans:%d:list',
         'feed_uid_push' => 'cache:feed:%d:push',
         'big_v_set' => 'cache:big_v_set',
-
     ),
     'queue_connect' => array(
         'host' => '127.0.0.1',
@@ -159,8 +187,7 @@ $config = new \Phalcon\Config(array(
         'allfeeds' => 'queue_allfeeds',
         'pushfeeds' => 'queue_%d_feeds',
     ),
-
-    'api_key'=>'F5T7OhcalDMBtgPAOsqPGE0ScSo=',
+    'api_key'=>'TO0nOIvhIFSitBMUgxlXbxmvris=',
 
 
 ));
