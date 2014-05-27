@@ -67,4 +67,56 @@ class MainTask extends \Phalcon\CLI\Task
         $userFeed->getFeedListByAppIdAndUid(1, 1);
     }
 
+    public function test3Action() {
+        for($i=0;$i<2;$i++) {
+            $k = time() + $i;
+            $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
+            $result = $model->insert(array(
+                'uid'=>$k,
+                'follow_count'=>1,
+                'fans_count'=>1,
+            ));
+            $model->trace();
+            $model = \HsMysql\HsModel::init('localhost', 9999, 'db_feedstate', 'feed_relation_0', 'idx0');
+            $model->insert(array(
+                'app_id'=>1,
+                'uid'=>$k,
+            ));
+            $model->trace();
+        }
+
+    }
+
+    public function test4Action() {
+        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
+        $model->find(1401128538, array('follow_count'), \HsMysql\O::EQ, 0, 10, array(
+            array('fans_count', \HsMysql\O::GT, 1),
+        ), array(1401128646,1401128538));
+        $model->trace();
+
+        exit;
+        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
+        $model->decrement(1401128538, array(
+            'follow_count'=>1,
+        ));
+        $model->trace();
+
+        exit;
+        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
+        $model->update(1401128538, array(
+            'follow_count'=>10,
+            'fans_count'=>1
+        ), \HsMysql\O::EQ, 0, 1, array(
+            array('fans_count', \HsMysql\O::EQ, 1),
+        ));
+        $model->trace();
+
+        exit;
+        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
+        $model->delete(1401128738, \HsMysql\O::EQ, 0, 1, array(
+            array('follow_count', \HsMysql\O::EQ, 1),
+        ));
+        $model->trace();
+    }
+
 }
