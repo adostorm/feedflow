@@ -175,6 +175,7 @@ class FeedRelation extends AdvModel
      */
     public function getFollowFeedsByUid($app_id, $uid, $offset = 0, $limit = 15)
     {
+
         $key = sprintf($this->cache_friend, $app_id, $uid);
 
         $timeline_key = sprintf($this->cache_timeline, $app_id, $uid);
@@ -194,6 +195,7 @@ class FeedRelation extends AdvModel
             if ($model_length = count($models)) {
                 $expire = \Util\ReadConfig::get('setting.cache_timeout_t2', $this->getDI());
                 $this->redis->set($timeline_ttl_key, 1, $expire);
+
                 $this->redis->set($timeline_key
                     , $models[$model_length - 1]['create_at']);
                 $this->redis->pipeline();
@@ -257,11 +259,6 @@ class FeedRelation extends AdvModel
             foreach ($results as $result) {
                 $rets[] = msgpack_unpack($result);
             }
-
-            $userFeedCountModel = new UserFeedCountModel($this->getDI());
-            $userFeedCountModel->update($uid, array(
-                'unread_count' => 0
-            ));
         }
         unset($results);
 

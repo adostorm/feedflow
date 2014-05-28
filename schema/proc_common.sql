@@ -8,6 +8,7 @@ SET NAMES 'utf8';
 #CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_userfeed` /*!40100 DEFAULT CHARACTER SET utf8 */;
 #CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_userstate` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
+set @num = 35;
 
 ############### 一, 创建db_countstate的表##########################
 
@@ -31,8 +32,7 @@ SET @sql = "
 	  PRIMARY KEY (`uid`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='会员计数器'
 ";
-CALL test.create_table('db_countstate', 'user_count', 0, 20, TRUE, @sql);
-#CALL test.delete_table('db_countstate', 'user_count', 0, 20, );
+CALL test.create_table('db_countstate', 'user_count', 0, @num, TRUE, @sql);
 
 
 -- 创建user_feed_count
@@ -45,8 +45,7 @@ SET @sql = "
   UNIQUE KEY `idx0` (`uid`,`app_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8  COMMENT='会员Feed计数器'
 ";
-CALL test.create_table('db_countstate', 'user_feed_count', 0, 20, TRUE, @sql);
-#CALL test.delete_table('db_countstate', 'user_feed_count', 0, 20, );
+CALL test.create_table('db_countstate', 'user_feed_count', 0, @num, TRUE, @sql);
 
 ###############  二,  创建db_feedcontent的表##########################
 
@@ -68,8 +67,7 @@ SET @sql = "
 	  PRIMARY KEY (`feed_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='feed内容表'
 ";
-CALL test.create_table('db_feedcontent', 'feed_content', 0, 20, TRUE, @sql);
-#CALL test.delete_table('db_feedcontent', 'feed_content', 0, 300, );
+CALL test.create_table('db_feedcontent', 'feed_content', 0, @num, TRUE, @sql);
 
 
 ###############  三  创建`db_feedstate`的表##########################
@@ -86,8 +84,7 @@ SET @sql = "
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='feed 推送关系'
 
 ";
-CALL test.create_table('db_feedstate', 'feed_relation', 0, 300, TRUE, @sql);
-#CALL test.delete_table('db_feedstate', 'feed_relation', 0, 300, );
+CALL test.create_table('db_feedstate', 'feed_relation', 0, @num, TRUE, @sql);
 
 
 ###############  四  创建`db_userfeed`的表##########################
@@ -103,8 +100,7 @@ SET @sql = "
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
 ";
-CALL test.create_table('db_userfeed', 'user_feed', 0, 300, TRUE, @sql);
-#CALL test.delete_table('db_userfeed', 'user_feed', 0, 300, );
+CALL test.create_table('db_userfeed', 'user_feed', 0, @num, TRUE, @sql);
 
 
 ###############  五  创建``db_userstate``的表##########################
@@ -120,7 +116,16 @@ SET @sql = "
 	  UNIQUE KEY `idx0` (`uid`,`friend_uid`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='会员关系'
 ";
-CALL test.create_table('db_userstate', 'user_relation', 0, 300, TRUE, @sql);
-#CALL test.delete_table('db_userstate', 'user_relation', 0, 300, );
+CALL test.create_table('db_userstate', 'user_relation', 0, @num, TRUE, @sql);
 
+
+############################  删除数据表  ##############################
+
+#CALL test.delete_table('db_countstate', 'feed_index', 0, 0, FALSE);
+#CALL test.delete_table('db_countstate', 'user_count', 0, 300,  TRUE);
+#CALL test.delete_table('db_countstate', 'user_feed_count', 0, 300, TRUE);
+#CALL test.delete_table('db_feedcontent', 'feed_content', 0, 300, TRUE);
+#CALL test.delete_table('db_feedstate', 'feed_relation', 0, 300, TRUE);
+#CALL test.delete_table('db_userfeed', 'user_feed', 0, 300, TRUE);
+#CALL test.delete_table('db_userstate', 'user_relation', 0, 300, TRUE);
 

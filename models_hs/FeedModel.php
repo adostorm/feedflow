@@ -24,8 +24,8 @@ class FeedModel extends CommonModel
      * @param $DI
      */
     public function __construct($DI) {
-        $this->_DI = $DI;
-        $this->_cache_key =
+        $this->DI = $DI;
+        $this->cache_key =
             \Util\ReadConfig::get('redis_cache_keys.feed_id_content', $DI);
     }
 
@@ -73,7 +73,6 @@ class FeedModel extends CommonModel
                 $userFeedCountModel = new UserFeedCountModel($this->DI);
                 $userFeedCountModel->updateCount($data['app_id'], $data['author_id'], array(
                     'feed_count' => 1,
-                    'unread_count' => 1,
                 ), 0, true);
 
                 $key = sprintf($this->cache_key, $feed_id);
@@ -113,6 +112,8 @@ class FeedModel extends CommonModel
             $result = $model->setField($fields)->find($feed_id);
 
             if ($result) {
+                $result = $result[0];
+
                 $result['extends'] = msgpack_unpack($result['extends']);
                 $redis->set($key, msgpack_pack($result),
                     \Util\ReadConfig::get('setting.cache_timeout_t1', $this->DI));

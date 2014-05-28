@@ -11,4 +11,6 @@ final class Op {
     const EQ = '=';
     const GT = '>';
     const LT = '<';
+    const GTEQ = '>=';
+    const LTEQ = '<=';
 }

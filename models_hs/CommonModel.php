@@ -27,8 +27,6 @@ class CommonModel {
             $this->tbSuffix);
 
         $model->setPrimary($this->primary);
-        $model->setReport(true);
-        $model->setIsFocusTrace(true);
         return $model;
     }
 
@@ -45,8 +43,6 @@ class CommonModel {
             $partition->getTbname());
 
         $model->setPrimary($this->primary);
-        $model->setReport(true);
-        $model->setIsFocusTrace(true);
         return $model;
     }
 

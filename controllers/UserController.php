@@ -240,10 +240,8 @@ class UserController extends CController
 
         $rets = array();
         if ($results) {
-            var_dump($results);
             $results = $userRelationModel->transfer($results);
             foreach ($friend_uids as $_uid) {
-//                var_dump($results, $_uid,isset($results[$_uid]));
                 $rets[] = array(
                     'uid' => (int) $_uid,
                     'status' => isset($results[$_uid]) ? (int) $results[$_uid] : -1,

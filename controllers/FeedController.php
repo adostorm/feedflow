@@ -91,6 +91,7 @@ class FeedController extends CController
 
         $feedRelation = new FeedRelation();
         $result = $feedRelation->getFollowFeedsByUid($app_id, $uid, $offset, $limit);
+
         $total = (int) $feedRelation->getFollowFeedsCount($app_id, $uid);
         $this->render(array(
             'list' => $result,

@@ -165,7 +165,7 @@ class UserRelationModel extends CommonModel
      */
     public function removeRelation($uid, $friend_uid)
     {
-        $status = $this->checkRelation($friend_uid, $uid);
+        $status = $this->checkRelation($uid, $friend_uid);
 
         $tempStatus = $status;
 
@@ -281,13 +281,20 @@ class UserRelationModel extends CommonModel
             unset($tmp);
         }
         $model = $this->getPartitionModel($uid);
-var_dump($friend_uids);
-        $results = $model
-            ->setField('friend_uid,status')
-            ->setInValues($friend_uids)
-            ->find($uid);
 
-        return $results;
+        $rets = array();
+        foreach($friend_uids as $_fuid) {
+            $result = $model
+                ->setField('friend_uid,status')
+                ->setFilter(array(
+                    array('friend_uid', '=', $_fuid)
+                ))->find($uid);
+            if($result) {
+                $rets[] = $result[0];
+            }
+        }
+
+        return $rets;
     }
 
     /**

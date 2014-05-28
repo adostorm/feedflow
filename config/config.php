@@ -189,7 +189,7 @@ $config = new \Phalcon\Config(array(
     ),
     'api_key'=>'TO0nOIvhIFSitBMUgxlXbxmvris=',
 
-
+    'debug'=>true,
 ));
 
 return $config;

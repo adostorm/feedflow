@@ -73,7 +73,6 @@ class UserFeedCountModel extends CommonModel
                 $this->redis->set($key,
                     msgpack_pack($counts),
                     \Util\ReadConfig::get('setting.cache_timeout_t1', $this->DI));
-
             }
         } else {
             $counts = msgpack_unpack($counts);

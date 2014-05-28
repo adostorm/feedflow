@@ -47,6 +47,8 @@ class PushTask extends \Phalcon\CLI\Task
         $userRelation = new UserRelationModel($this->getDI());
         $feedRelation = new FeedRelationModel($this->getDI());
         $countRelation = new UserCountModel($this->getDI());
+        $userFeedCountModel = new UserFeedCountModel($this->getDI());
+
 
         try {
             while (1) {
@@ -69,7 +71,13 @@ class PushTask extends \Phalcon\CLI\Task
                                 'feed_id' => $feed_id,
                                 'create_at' => $time,
                             ));
+                            $userFeedCountModel->updateCount(
+                                $data['app_id']
+                                , $data['author_id']
+                                , 'feed_count'
+                                , 1, true);
                         }
+
                     }
 
                     $job->delete();

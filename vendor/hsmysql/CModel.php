@@ -34,12 +34,6 @@ class CModel
 
     private $_sql = '';
 
-    private $_traces = array();
-
-    private $_debug = false;
-
-    private $_report = false;
-
     private $_isFocusTrace = false;
 
     private $_DI = null;
@@ -55,26 +49,6 @@ class CModel
     public function setDI($DI)
     {
         $this->_DI = $DI;
-        return $this;
-    }
-
-    /**
-     * @param $debug
-     * @return $this
-     */
-    public function setDebug($debug)
-    {
-        $this->_debug = $debug;
-        return $this;
-    }
-
-    /**
-     * @param $report
-     * @return $this
-     */
-    public function setReport($report)
-    {
-        $this->_report = $report;
         return $this;
     }
 
@@ -166,9 +140,6 @@ class CModel
         $this->_filter = null;
         $this->_inValues = null;
         $this->_sql = '';
-        $this->_traces = array();
-        $this->_debug = false;
-        $this->_report = false;
         $this->_isFocusTrace = false;
     }
 
@@ -203,6 +174,7 @@ class CModel
                     $config['dbname'] = $slaves[$rnd]['dbname'];
                     $config['password'] = $slaves[$rnd]['hs_read_passwd'];
                     $config['port'] = $slaves[$rnd]['hs_read_port'];
+                    $config['status'] = 'SLAVE';
                 } else {
                     $config['host'] =
                         ReadConfig::get("{$this->_link}.host", $this->_DI);
@@ -212,6 +184,7 @@ class CModel
                         ReadConfig::get("{$this->_link}.hs_read_passwd", $this->_DI);
                     $config['port'] =
                         ReadConfig::get("{$this->_link}.hs_read_port", $this->_DI);
+                    $config['status'] = 'MASTER';
                 }
             } else if ($mode == T::WRITE) {
                 $config['host'] =
@@ -222,6 +195,7 @@ class CModel
                     ReadConfig::get("{$this->_link}.hs_write_passwd", $this->_DI);
                 $config['port'] =
                     ReadConfig::get("{$this->_link}.hs_write_port", $this->_DI);
+                $config['status'] = 'MASTER';
             }
             $cacheConfig[$key] = $config;
         }
@@ -242,7 +216,7 @@ class CModel
             , $this->_filter
             , $this->_inValues);
 
-        $this->_info_('select', $hsModel, $operate, $key);
+        $this->_info_('select', $hsModel, $result, $operate, $key);
         return $result;
     }
 
@@ -251,7 +225,8 @@ class CModel
         $config = $this->_parseConfig(T::WRITE);
         $hsModel = $this->_getHsModel($config);
         $result = $hsModel->insert($data);
-        $this->_info_('insert', $hsModel, $data);
+
+        $this->_info_('insert', $hsModel, $result,  $data);
         return $result;
     }
 
@@ -267,7 +242,7 @@ class CModel
             , $this->_limit
             , $this->_filter);
 
-        $this->_info_('update', $hsModel, $operate, $data, $key);
+        $this->_info_('update', $hsModel, $result, $operate, $data, $key);
         return $result;
     }
 
@@ -282,7 +257,7 @@ class CModel
             , $this->_limit
             , $this->_filter);
 
-        $this->_info_('delete', $hsModel, $operate, $key);
+        $this->_info_('delete', $hsModel, $result, $operate, $key);
         return $result;
     }
 
@@ -291,7 +266,8 @@ class CModel
         $config = $this->_parseConfig(T::WRITE);
         $hsModel = $this->_getHsModel($config);
         $result = $hsModel->increment($key, $data);
-        $this->_info_('counter', $hsModel, '+', $data, $key);
+
+        $this->_info_('counter', $hsModel, $result, '+', $data, $key);
         return $result;
     }
 
@@ -300,7 +276,17 @@ class CModel
         $config = $this->_parseConfig(T::WRITE);
         $hsModel = $this->_getHsModel($config);
         $result = $hsModel->decrement($key, $data);
-        $this->_info_('counter', $hsModel, '-', $data, $key);
+
+        $this->_info_('counter', $hsModel, $result, '-', $data, $key);
+        return $result;
+    }
+
+    public function multiFind($key, $operate=Op::EQ, Filter $filter) {
+        $config = $this->_parseConfig(T::READ);
+        $hsModel = $this->_getHsModel($config);
+        $result = $hsModel->multiFind($key, $operate, $this->_field, $filter);
+
+        $this->_info_('', $hsModel, $result);
         return $result;
     }
 
@@ -315,11 +301,33 @@ class CModel
     public function __call($name, $arguments)
     {
         if ($name == '_info_') {
-            if ($this->_report || $this->_debug) {
+
+            $debug = ReadConfig::get('debug', $this->_DI);
+
+            if ($debug) {
+
+                $_traces = array(
+                    'HOST:'=>'',
+                    'PORT:'=>'',
+                    'DATABASE STATUS:'=>'',
+                    'DATABASE NAME:'=>'',
+                    'TABLE NAME:'=>'',
+                    'CONNECT ID:'=>'',
+                    'CONSTRAINT:'=>'',
+                    'EXECUTE SQL:'=>'',
+                    'EXECUTE RESULT:'=>'',
+                    'EXECUTE STATUS:'=>'',
+                    'ERROR INFO:'=>'',
+                );
+
                 $mode = $arguments[0];
                 $hsModel = $arguments[1];
+                $result = var_export($arguments[2], true);
 
-                $_traces = $hsModel->getTraces();
+                $config = $hsModel->getConfig();
+                $_traces = array_merge($_traces, $hsModel->getTraces());
+
+                $_traces['EXECUTE RESULT:'] = $result;
 
                 $filterChunks = array('');
                 if ($this->_filter) {
@@ -328,56 +336,58 @@ class CModel
                     }
                 }
 
+                $_sql = '';
                 switch ($mode) {
                     case 'insert':
-                        $data = $arguments[2];
+                        $data = $arguments[3];
 
-                        $this->_sql = trim(sprintf('INSERT INTO `%s` (%s) VALUES (%s)'
+                        $_sql = trim(sprintf('INSERT INTO `%s` (%s) VALUES (%s)'
                             , $_traces['TABLE NAME:']
                             , implode(',', array_keys($data))
                             , implode(',', array_values($data)))).';';
 
-                        $_traces['EXECUTE SQL:'] = $this->_sql;
+                        $_traces['DATABASE STATUS:'] = 'WRITEABLE @'.$config['status'].'(INSERT)';
+
                         break;
 
                     case 'update':
-                        $operate = $arguments[2];
-                        $data = $arguments[3];
-                        $key = $arguments[4];
+                        $operate = $arguments[3];
+                        $data = $arguments[4];
+                        $key = $arguments[5];
                         $chunks2 = array('');
                         foreach ($data as $k => $v) {
                             $chunks2[] = $k . '=' . $v;
                         }
-                        $this->_sql = trim(sprintf('UPDATE `%s` SET %s WHERE [INDEX%s%s] %s'
+                        $_sql = trim(sprintf('UPDATE `%s` SET %s WHERE [INDEX%s%s] %s'
                             , $_traces['TABLE NAME:']
                             , trim(implode(' , ', $chunks2), ' , ')
                             , $operate
                             , $key
                             , implode(' AND ', $filterChunks))).';';
 
-                        $_traces['EXECUTE SQL:'] = $this->_sql;
+                        $_traces['DATABASE STATUS:'] = 'WRITEABLE @'.$config['status'].'(UPDATE)';
                         break;
 
                     case 'delete':
-                        $operate = $arguments[2];
-                        $key = $arguments[3];
-                        $this->_sql = trim(sprintf('DELETE FROM `%s` WHERE [INDEX%s%s] %s'
+                        $operate = $arguments[3];
+                        $key = $arguments[4];
+                        $_sql = trim(sprintf('DELETE FROM `%s` WHERE [INDEX%s%s] %s'
                             , $_traces['TABLE NAME:']
                             , $operate
                             , $key
                             , implode(' AND ', $filterChunks))).';';
 
-                        $_traces['EXECUTE SQL:'] = $this->_sql;
+                        $_traces['DATABASE STATUS:'] = 'WRITEABLE @'.$config['status'].'(DELETE)';
                         break;
 
                     case 'select':
-                        $operate = $arguments[2];
-                        $key = $arguments[3];
+                        $operate = $arguments[3];
+                        $key = $arguments[4];
 
                         $in_chunk = $this->_inValues
                             ? ' AND [INDEX] IN (' . implode(',', $this->_inValues) . ')'
                             : '';
-                        $this->_sql = trim(sprintf('SELECT %s FROM `%s` WHERE [INDEX%s%s] %s %s'
+                        $_sql = trim(sprintf('SELECT %s FROM `%s` WHERE [INDEX%s%s] %s %s'
                             , ($this->_field ? implode(',', $this->_field) : '')
                             , $_traces['TABLE NAME:']
                             , $operate
@@ -390,63 +400,66 @@ class CModel
                             $_traces['EXECUTE STATUS:'] = 'ERROR';
                             $_traces['ERROR INFO:'] = 'Require a field, eg: SELECT [field1, field2, ...] FROM [table] [where ...];';
                         }
-                        $_traces['EXECUTE SQL:'] = $this->_sql;
+
+                        $_traces['DATABASE STATUS:'] = 'READABLE @'.$config['status'].'(SELECT)';
                         break;
 
                     case 'counter':
-                        $mode = $arguments[2];
-                        $data = $arguments[3];
-                        $key = $arguments[4];
+                        $mode = $arguments[3];
+                        $data = $arguments[4];
+                        $key = $arguments[5];
 
                         $chunks2 = array('');
                         foreach ($data as $k => $v) {
                             $chunks2[] = $k . '=' . $k . $mode . $v;
                         }
 
-                        $this->_sql = sprintf('UPDATE `%s` SET %s WHERE [INDEX%s%s] %s;'
+                        $_sql = sprintf('UPDATE `%s` SET %s WHERE [INDEX%s%s] %s;'
                             , $this->_tbname
                             , trim(implode(' , ', $chunks2), ' , ')
                             , '='
                             , $key
                             , trim(implode(' AND ', $filterChunks)));
 
-                        $_traces['EXECUTE SQL:'] = $this->_sql;
+                        $_traces['DATABASE STATUS:'] = 'WRITEABLE @'.$config['status'].'(UPDATE)';
                         break;
                 }
-                $this->_traces = $_traces;
 
-                if($this->_isFocusTrace) {
-                    $this->trace();
-                }
+                $_traces['EXECUTE SQL:'] = $_sql;
 
-                if ($this->_debug) {
-                    //save in file
-                }
+                $this->trace($_traces);
+
             }
-
-
         }
     }
 
-    public function trace()
+    public function trace($_traces)
     {
-        echo PHP_EOL;
+        $_log = array();
 
-        echo str_pad('', 31, '*')
+        $_log[] = str_pad('', 31, '*')
             . 'DEBUG INFORMATION'
-            . str_pad('', 32, '*')
-            . PHP_EOL;
+            . str_pad('', 32, '*');
 
-        if (!$this->_traces) {
-            echo '- PLEASE OPEN DEBUG MODE' . PHP_EOL;
+        if (!$_traces) {
+            $_log[] = '- PLEASE OPEN DEBUG MODE';
         } else {
-            foreach ($this->_traces as $desc => $info) {
-                echo str_pad($desc, 16, ' ', STR_PAD_LEFT) . ' ' . $info . PHP_EOL;
+            foreach ($_traces as $desc => $info) {
+                $_log[] = str_pad($desc, 16, ' ', STR_PAD_LEFT) . ' ' . $info;
             }
         }
 
-        echo PHP_EOL;
-        $this->_traces = array();
+        $_log[] = PHP_EOL;
+
+        $_logStr = implode(PHP_EOL, $_log);
+
+        if(isset($_REQUEST['report']) && $_REQUEST['report']) {
+            echo $_logStr;
+        } else {
+            $filePath = ReadConfig::get('application.path', $this->_DI).'log/'.date('Y-m-d').'.log';
+            error_log($_logStr, 3, $filePath);
+        }
+
     }
 
 }

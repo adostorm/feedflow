@@ -8,8 +8,7 @@
 namespace HsMysql;
 
 use HsMysql\Op;
-use HsMysql\Index;
-
+use HsMysql\Filter;
 
 class HsModel
 {
@@ -19,13 +18,7 @@ class HsModel
 
     private $_config = array();
 
-    private $_traces = array();
-
-    private $_result = array();
-
     private $_isAssociate = true;
-
-    private $_associateFields = array();
 
     private $_error = '';
 
@@ -36,6 +29,7 @@ class HsModel
         'unauth' => 'Must be auth or Has an error with password',
         'xx' => '[handlersocket] unable to connect 1:1',
         'stmtnum' => 'Either field has not founded or [table | data] was not exists',
+        'op'=>'Error with operate character',
     );
 
     /**
@@ -46,6 +40,14 @@ class HsModel
     {
         $this->_isAssociate = $isAssociate;
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getConfig()
+    {
+        return $this->_config;
     }
 
     private function __construct()
@@ -83,7 +85,6 @@ class HsModel
     {
         if (!method_exists($this, $name)) {
             throw new \Exception('Has No ' . __CLASS__ . "::" . $name . ' method');
-            exit;
         }
         call_user_func_array(array($this, $name), $arguments);
     }
@@ -149,7 +150,6 @@ class HsModel
 
         $result = $this->_associate($result, $columns);
 
-        $this->_result = var_export($result, true);
         if (false === $result) {
             $this->_error = $_handler->getError();
         }
@@ -171,13 +171,11 @@ class HsModel
         $_parser = $this->_parseFilters($filters);
         $_handler = $this->getHandlerSocketCache();
 
-        $_columns = array_keys($data);
-
         $_handler->openIndex($this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
-            , $_columns
+            , array_keys($data)
             , $_parser['field']);
 
         $result = $_handler->executeSingle($this->_autoIndex
@@ -189,9 +187,6 @@ class HsModel
             , array_values($data)
             , $_parser['filter']);
 
-        $result = $this->_associate($result, $_columns);
-
-        $this->_result = var_export($result, true);
         if (false === $result) {
             $this->_error = $_handler->getError();
         }
@@ -203,13 +198,11 @@ class HsModel
         $_parser = $this->_parseFilters($filters);
         $_handler = $this->getHandlerSocketCache();
 
-        $_columns = array_keys($data);
-
         $_handler->openIndex($this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
-            , $_columns
+            , array_keys($data)
             , $_parser['field']);
 
         $result = $_handler->executeUpdate($this->_autoIndex
@@ -220,9 +213,6 @@ class HsModel
             , $offset
             , $_parser['filter']);
 
-        $result = $this->_associate($result, $_columns);
-
-        $this->_result = var_export($result, true);
         if (false === $result) {
             $this->_error = $_handler->getError();
         }
@@ -250,7 +240,6 @@ class HsModel
 
         $result = $this->_associate($result, $_parser['field']);
 
-        $this->_result = var_export($result, true);
         if (false === $result) {
             $this->_error = $_handler->getError();
         }
@@ -263,18 +252,57 @@ class HsModel
 
         $_columns = array_keys($data);
 
-        $_handler->openIndex($this->_autoIndex
+        $_handler->openIndex(
+            $this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
-            , $_columns);
+            , $_columns
+        );
 
-        $result = $_handler->executeInsert($this->_autoIndex
-            , array_values($data));
+        $result = $_handler->executeInsert(
+            $this->_autoIndex
+            , array_values($data)
+        );
 
         $result = $this->_associate($result, $_columns);
 
-        $this->_result = var_export($result, true);
+        if (false === $result) {
+            $this->_error = $_handler->getError();
+        }
+        return $result;
+    }
+
+    public function multiFind($key, $operate='=', $columns, Filter $filter) {
+        $_handler = $this->getHandlerSocketCache();
+
+        $_metas = $filter->getMetas();
+
+        $_handler->openIndex(
+            $this->_autoIndex
+            , $this->_config['dbname']
+            , $this->_config['tbname']
+            , $this->_config['primary']
+            , $columns
+        );
+
+        $args = array();
+        foreach($_metas as $_meta) {
+            $_parser = $this->_parseFilters(array($_meta));
+            $args[] = array(
+                $this->_autoIndex,
+                $operate,
+                array($key),
+                1,
+                0,
+                null,
+                null,
+                $_parser['filter']
+            );
+        }
+
+        $result = $_handler->executeMulti($args);
+
         if (false === $result) {
             $this->_error = $_handler->getError();
         }
@@ -315,16 +343,16 @@ class HsModel
 
     public function getTraces()
     {
-        $this->_traces['HOST:'] = $this->_config['host'];
-        $this->_traces['PORT:'] = $this->_config['port'];
-        $this->_traces['DATABASE NAME:'] = $this->_config['dbname'];
-        $this->_traces['TABLE NAME:'] = $this->_config['tbname'];
-        $this->_traces['CONNECT ID:'] = $this->_autoIndex;
-        $this->_traces['CONSTRAINT:'] = $this->_config['primary'];
-        $this->_traces['EXECUTE SQL:'] = '';
-        $this->_traces['EXECUTE RESULT:'] = $this->_result;
-        $this->_traces['EXECUTE STATUS:'] =
-            strval($this->_result) === 'false'
+        $_traces['HOST:'] = $this->_config['host'];
+        $_traces['PORT:'] = $this->_config['port'];
+        $_traces['DATABASE NAME:'] = $this->_config['dbname'];
+        $_traces['TABLE NAME:'] = $this->_config['tbname'];
+        $_traces['CONNECT ID:'] = $this->_autoIndex;
+        $_traces['CONSTRAINT:'] = $this->_config['primary'];
+        $_traces['EXECUTE SQL:'] = '';
+        $_traces['EXECUTE RESULT:'] = '';
+        $_traces['EXECUTE STATUS:'] =
+            $this->_error
                 ? 'ERROR'
                 : 'SUCCESS @(If result equal 0 or empty that Maybe the data was not exists.)';
 
@@ -336,12 +364,15 @@ class HsModel
         } else {
             $errormsg = $this->_error;
         }
-        $this->_traces['ERROR INFO:'] = $errormsg;
-        return $this->_traces;
+        $_traces['ERROR INFO:'] = $errormsg;
+        return $_traces;
     }
 
     public function trace()
     {
+
+        $_traces = $this->getTraces();
+
         echo PHP_EOL;
 
         echo str_pad('', 31, '*')
@@ -349,15 +380,16 @@ class HsModel
             . str_pad('', 32, '*')
             . PHP_EOL;
 
-        if (!$this->_traces) {
+        if (!$_traces) {
             echo '- PLEASE OPEN DEBUG MODE' . PHP_EOL;
         } else {
-            foreach ($this->_traces as $desc => $info) {
+            foreach ($_traces as $desc => $info) {
                 echo str_pad($desc, 16, ' ', STR_PAD_LEFT) . ' ' . $info . PHP_EOL;
             }
         }
 
         echo PHP_EOL;
-        $this->_traces = array();
+
+        unset($_traces);
     }
 }

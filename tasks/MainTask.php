@@ -132,6 +132,25 @@ class MainTask extends \Phalcon\CLI\Task
     }
 
     public function test6Action() {
+        $f = new \HsMysql\Filter();
+        $f->add(array('friend_uid', '=', 2));
+        $f->add(array('friend_uid', '=', 3));
+        $f->add(array('friend_uid', '=', 4));
+
+        $_GET['report'] = 1;
+        $m = \HsMysql\CModel::init($this->getDI(), 'link_db_userstate', 'user_relation_0');
+
+        $m->multiFind(1, '=',  $f);
+
+
+        exit;
+        $meta = new \HsMysql\Meta();
+        $meta->setKey(1)->setField('fffff');
+        $meta->add(array('xxx', '=', 1));
+
+        var_dump($meta->getMultiMeta());
+
+        exit;
         $m = new UserRelationModel($this->getDI());
         $m->getFansList(1231, 0, 15);
 
