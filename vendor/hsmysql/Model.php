@@ -8,6 +8,7 @@
 namespace HsMysql;
 
 use Phalcon\Exception;
+use Util\Partition;
 use Util\ReadConfig;
 
 class Model
@@ -30,6 +31,10 @@ class Model
     public $tbname = '';
 
     public $dbname = '';
+
+    private $pTbname = '';
+
+    private $pDbname = '';
 
     public $filter = null;
 
@@ -86,11 +91,9 @@ class Model
     {
         if (stripos($link, '.') > 0) {
             list($dbname, $tbname) = explode('.', $link);
-            $this->dbname = $dbname;
-            $this->tbname = $tbname;
+            $this->dbname = $this->pDbname = $dbname;
+            $this->tbname = $this->pTbname = $tbname;
         }
-
-
     }
 
     private function _parseConfig($readOrWrite = self::WRITE_PORT)
@@ -112,9 +115,9 @@ class Model
                 if($slaves) {
                     $rnd = array_rand($slaves);
                     $config['host'] = $slaves[$rnd]['host'];
-                    $config['port'] = $slaves[$rnd]['port'];
                     $config['dbname'] = $slaves[$rnd]['dbname'];
                     $config['password'] = $slaves[$rnd]['hs_read_passwd'];
+                    $config['port'] = $slaves[$rnd]['hs_read_port'];
                 } else {
                     $config['host'] = ReadConfig::get("{$link}.host", $this->di);
                     $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
@@ -124,8 +127,8 @@ class Model
             } else if ($readOrWrite == self::WRITE_PORT) {
                 $config['host'] = ReadConfig::get("{$link}.host", $this->di);
                 $config['dbname'] = ReadConfig::get("{$link}.dbname", $this->di);
-                $config['port'] = ReadConfig::get("{$link}.hs_write_port", $this->di);
                 $config['password'] = ReadConfig::get("{$link}.hs_write_passwd", $this->di);
+                $config['port'] = ReadConfig::get("{$link}.hs_write_port", $this->di);
             }
 
             $cacheConfig[$key] = $config;
@@ -192,7 +195,7 @@ class Model
                 $this->limit = count($this->in_values) + 1;
                 $in_key = 0;
             }
-            $handlersocket = $handler->initOpenIndex(self::SELECT, $this->tbname, $this->index, $this->fields, $this->indexFilter);
+            $handlersocket = $handler->initOpenIndex(self::SELECT, $this->pTbname, $this->index, $this->fields, $this->indexFilter);
             $result = $handlersocket->executeSingle(self::SELECT, $op, array($key), $this->limit, $this->offset, null, null, $this->whereFilter, $in_key, $this->in_values);
             $this->in_values = null;
             $this->isChangedPartition = false;
@@ -215,7 +218,7 @@ class Model
         $pairs = $this->_parseFieldsAndValues($data);
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         try {
-            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
+            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->pTbname, $this->index, $pairs['fields'], $this->indexFilter);
             $result = $handlersocket->executeUpdate(self::UPDATE, $op, array($key), $pairs['values'], $this->limit, $this->offset, $this->whereFilter);
             if (false === $result) {
                 $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
@@ -230,10 +233,15 @@ class Model
     {
         $pairs = $this->_parseFieldsAndValues($data);
         $this->_parsePartitionByInsert($data);
+
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         try {
-            $handlersocket = $handler->initOpenIndex(self::INSERT, $this->tbname, $this->index, $pairs['fields']);
+            $handlersocket = $handler->initOpenIndex(self::INSERT, $this->pTbname, $this->index, $pairs['fields']);
             $result = $handlersocket->executeInsert(self::INSERT, $pairs['values']);
+            echo $this->pTbname;
+            echo PHP_EOL;
+            var_dump(self::INSERT, $this->pTbname, $this->index, $pairs['fields']);
+            echo PHP_EOL;
             if (false === $result) {
                 $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
             }
@@ -255,7 +263,7 @@ class Model
             throw new \Exception('no field , please set any field like this: $model->field([...]);');
         }
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
-        $handlersocket = $handler->initOpenIndex(self::DELETE, $this->tbname, $this->index, $field, $this->indexFilter);
+        $handlersocket = $handler->initOpenIndex(self::DELETE, $this->pTbname, $this->index, $field, $this->indexFilter);
         $result = $handlersocket->executeDelete(self::DELETE, $op, array($key), $this->limit, $this->offset, $this->whereFilter);
         if (false === $result) {
             $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
@@ -280,7 +288,7 @@ class Model
         $pairs = $this->_parseFieldsAndValues($data);
         $handler = \HsMysql\Handler::getInstance($this->_parseConfig(self::WRITE_PORT));
         try {
-            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->tbname, $this->index, $pairs['fields'], $this->indexFilter);
+            $handlersocket = $handler->initOpenIndex(self::UPDATE, $this->pTbname, $this->index, $pairs['fields'], $this->indexFilter);
             $result = $handlersocket->executeSingle(self::UPDATE, $op, array($key), $this->limit, $this->offset, $mode, $pairs['values'], $this->whereFilter);
             if (false === $result) {
                 $this->logger->log($handlersocket->getError(), \Phalcon\Logger::ERROR);
@@ -294,6 +302,7 @@ class Model
 
     public function _parsePartitionByInsert($data)
     {
+        $this->pTbname = $this->tbname;
         if (isset($this->partition['field']) && isset($data[$this->partition['field']])) {
             $this->_parsePartition($data[$this->partition['field']]);
         }
@@ -301,39 +310,12 @@ class Model
 
     public function _parsePartition($id)
     {
-//       echo "id=".$id;echo PHP_EOL;
-        static $cacheTable = array();
-        static $_tmp_tb = '';
-        if (!isset($cacheTable[$this->tbname.$id]) && is_array($this->partition) && $this->partition) {
-            if(!$_tmp_tb) {
-                $_tmp_tb = $this->tbname;
-            }
-            if ($this->partition['mode'] == 'mod') {
-                $ret = $id % $this->partition['step'];
-                $this->tbname = $_tmp_tb.'_' . $ret;
-            } else if ($this->partition['mode'] == 'range') {
-                $steps = $this->partition['step'];
-                $count = sizeof($steps);
-                $num = 0;
-                for ($i = 0; $i < $count; $i++) {
-                    if (($i + 1) == $count) { //boundary
-                        $num = $i;
-                    } else if ($id >= $steps[$i] && $id < $steps[$i + 1]) {
-                        $num = $i;
-                        break;
-                    }
-                }
-                $this->tbname = $_tmp_tb.'_' . $num;
+        $_pr = \Util\Partition::getInstance()
+                    ->init($this->dbname, $this->tbname, $this->partition);
+        $_pr->run($id);
 
-                $cacheTable[$this->tbname.$id] = $this->tbname;
-
-                if ($num > $this->partition['limit']) {
-                    $this->dbname = sprintf('%s_%d', $this->dbname, $num / $this->partition['limit']);
-                } else {
-                    $this->dbname = sprintf('%s', $this->dbname);
-                }
-            }
-        }
+        $this->pDbname = $_pr->getPartDbname();
+        $this->pTbname = $_pr->getPartTbname();
     }
 
     private function _parseData($data)

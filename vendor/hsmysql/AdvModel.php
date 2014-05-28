@@ -8,6 +8,8 @@
 namespace HsMysql;
 
 
-class AdvModel extends BaseModel {
+class AdvModel extends CModel {
+
+
 
 }

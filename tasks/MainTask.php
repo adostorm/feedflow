@@ -88,35 +88,46 @@ class MainTask extends \Phalcon\CLI\Task
     }
 
     public function test4Action() {
-        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
-        $model->find(1401128538, array('follow_count'), \HsMysql\O::EQ, 0, 10, array(
-            array('fans_count', \HsMysql\O::GT, 1),
-        ), array(1401128646,1401128538));
-        $model->trace();
+//        $h = new \HandlerSocket('localhost', 9999);
+//
+//        $h->openIndex(1, 'db_countstate', 'user_count_0', 'PRIMARY', 'uid,follow_count,fans_count');
+//        $result = $h->executeInsert(1, array(231312,1,1));
+//        var_dump($result, $h->getError());
+//
+//        $h->openIndex(2, 'db_countstate', 'user_count_2', 'PRIMARY', 'uid,follow_count,fans_count');
+//        $result = $h->executeInsert(2, array(2313128,1,1));
+//        var_dump($result, $h->getError());
+//        $h->openIndex(3, 'db_countstate', 'user_count_30', 'PRIMARY', 'uid,follow_count,fans_count');
+//        $result = $h->executeInsert(3, array(231312899,1,1));
+//        var_dump($result, $h->getError());
+//        exit;
 
-        exit;
-        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
-        $model->decrement(1401128538, array(
-            'follow_count'=>1,
-        ));
-        $model->trace();
 
-        exit;
-        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
-        $model->update(1401128538, array(
-            'follow_count'=>10,
-            'fans_count'=>1
-        ), \HsMysql\O::EQ, 0, 1, array(
-            array('fans_count', \HsMysql\O::EQ, 1),
-        ));
-        $model->trace();
+        $uid = 140112;
+        $m = new TestModel($this->getDI());
+//        $m->getCountByUid($uid);
+//        $m->getCountByUid(1313123);
+        for($i=0;$i<100;$i++) {
+            $m->addCount(230312+$i);
+            $m->addCount(232314+$i);
+            $m->addCount(234315+$i);
+            $m->addCount(2313128+$i);
+            $m->addCount(231312899+$i);
+        }
 
-        exit;
-        $model = \HsMysql\HsModel::init('localhost', 9999, 'db_countstate', 'user_count_0');
-        $model->delete(1401128738, \HsMysql\O::EQ, 0, 1, array(
-            array('follow_count', \HsMysql\O::EQ, 1),
-        ));
-        $model->trace();
+//        $m->updateCount(13131288);
+//        $m->incrCount(13131288);
+    }
+
+    public function test5Action() {
+        $m = new TestModel($this->getDI());
+        for($i=0;$i<100;$i++) {
+            $m->addCount(236312+$i);
+            $m->addCount(238314+$i);
+            $m->addCount(244315+$i);
+            $m->addCount(2323128+$i);
+            $m->addCount(231312899+$i);
+        }
     }
 
 }

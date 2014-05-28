@@ -1,3 +1,5 @@
+SET NAMES 'utf8';
+
 ############# 创建数据库 ################
 
 #CREATE DATABASE /*!32312 IF NOT EXISTS*/`db_countstate` /*!40100 DEFAULT CHARACTER SET utf8 */;
