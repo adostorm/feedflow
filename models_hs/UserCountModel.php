@@ -72,7 +72,7 @@ class UserCountModel extends CommonModel
             if ($counts) {
                 $counts = $counts[0];
                 $this->redis->set($key,
-                    msgpack_pack($counts[0]),
+                    msgpack_pack($counts),
                     \Util\ReadConfig::get('setting.cache_timeout_t1', $this->DI));
             }
         } else {

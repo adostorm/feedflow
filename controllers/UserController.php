@@ -229,7 +229,7 @@ class UserController extends CController
             $tmp = array();
             $friend_uids = str_replace('，', ',', $friend_uids);
             foreach (explode(',', $friend_uids) as $_fuid) {
-                $tmp[] = $_fuid;
+                $tmp[] = (int) $_fuid;
             }
             $friend_uids = $tmp;
             unset($tmp);
@@ -240,8 +240,10 @@ class UserController extends CController
 
         $rets = array();
         if ($results) {
+            var_dump($results);
             $results = $userRelationModel->transfer($results);
             foreach ($friend_uids as $_uid) {
+//                var_dump($results, $_uid,isset($results[$_uid]));
                 $rets[] = array(
                     'uid' => (int) $_uid,
                     'status' => isset($results[$_uid]) ? (int) $results[$_uid] : -1,
@@ -294,7 +296,7 @@ class UserController extends CController
                     $rets[] = array(
                         'uid' => (int) $uid,
                         'follow_count' => (int) $result['follow_count'],
-                        'fans_count' => (int) $result['follow_count'],
+                        'fans_count' => (int) $result['fans_count'],
                     );
                     unset($result);
                 } else {

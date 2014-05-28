@@ -375,7 +375,7 @@ class CModel
                         $key = $arguments[3];
 
                         $in_chunk = $this->_inValues
-                            ? ' AND【INDEX】 IN (' . implode(',', $this->_inValues) . ')'
+                            ? ' AND [INDEX] IN (' . implode(',', $this->_inValues) . ')'
                             : '';
                         $this->_sql = trim(sprintf('SELECT %s FROM `%s` WHERE [INDEX%s%s] %s %s'
                             , ($this->_field ? implode(',', $this->_field) : '')
@@ -403,7 +403,7 @@ class CModel
                             $chunks2[] = $k . '=' . $k . $mode . $v;
                         }
 
-                        $this->_sql = sprintf('UPDATE `%s` SET %s WHERE 【INDEX%s%s】 %s;'
+                        $this->_sql = sprintf('UPDATE `%s` SET %s WHERE [INDEX%s%s] %s;'
                             , $this->_tbname
                             , trim(implode(' , ', $chunks2), ' , ')
                             , '='

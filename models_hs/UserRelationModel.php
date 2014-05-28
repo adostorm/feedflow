@@ -281,13 +281,11 @@ class UserRelationModel extends CommonModel
             unset($tmp);
         }
         $model = $this->getPartitionModel($uid);
-
+var_dump($friend_uids);
         $results = $model
             ->setField('friend_uid,status')
             ->setInValues($friend_uids)
-            ->setFilter(array(
-                array('status', '>=', 0),
-            ))->find($uid);
+            ->find($uid);
 
         return $results;
     }
