@@ -71,7 +71,7 @@ $config = new \Phalcon\Config(array(
                 'port'=>3306,
                 'username' => 'root',
                 'password' => '123456',
-                'dbname' => 'db_countstate',
+                'dbname' => 'db_feedcontent',
                 'charset'   =>'utf8',
 
                 'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
@@ -98,7 +98,7 @@ $config = new \Phalcon\Config(array(
                 'port'=>3306,
                 'username' => 'root',
                 'password' => '123456',
-                'dbname' => 'db_countstate',
+                'dbname' => 'db_feedstate',
                 'charset'   =>'utf8',
 
                 'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',
@@ -152,7 +152,7 @@ $config = new \Phalcon\Config(array(
                 'port'=>3306,
                 'username' => 'root',
                 'password' => '123456',
-                'dbname' => 'db_countstate',
+                'dbname' => 'db_userstate',
                 'charset'   =>'utf8',
 
                 'hs_read_passwd' => '5nwD14yN$kmkbmi2CfZSnlD2UeSAqx1',

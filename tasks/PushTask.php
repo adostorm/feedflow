@@ -53,7 +53,7 @@ class PushTask extends \Phalcon\CLI\Task
                 while (false !== $this->q->peekReady()) {
                     $job = $this->q->reserve();
                     $data = $job->getBody();
-                    var_dump($data);
+
                     list($app_id, $uid, $feed_id, $time) = explode('|', $data);
                     if ($countRelation->setBigv($uid)) {
                         $job->delete();

@@ -21,7 +21,7 @@ $app->notFound(function () use ($app) {
 $feedController = new FeedController();
 /**
  * test case :
- * curl -d "app_id=1&source_id=1&type=1&type_id=121212&author_id=1231&author=塑料袋&content=aaaaaaaaaa&create_time=12121231" http://feed.api.mama.cn/feed/create
+ * curl -d "app_id=1&source_id=1&object_type=1&object_id=121212&author_id=1231&author=塑料袋&content=aaaaaaaaaa&create_at=12121231" http://feed.api.mama.cn/statuses/create
  */
 $app->post('/statuses/create', array($feedController, 'create'));
 
@@ -65,4 +65,7 @@ $app->get('/friendships/statuses', array($userController, 'getRelations'));
  */
 $app->get('/users/counts', array($userController, 'getCounts'));
 
+/**
+ * curl -i -X GET 'http://feed.api.mama.cn/remind/feed_count?uid=1231'
+ */
 $app->get('/remind/feed_count', array($userController, 'getFeedCount'));

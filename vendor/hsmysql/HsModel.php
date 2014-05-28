@@ -25,6 +25,8 @@ class HsModel
 
     private $_isAssociate = true;
 
+    private $_associateFields = array();
+
     private $_error = '';
 
     private $_autoIndex = 1;
@@ -101,15 +103,16 @@ class HsModel
         return $this->_handlerCaches[$key];
     }
 
-    private function _getAutoIndex() {
+    private function _getAutoIndex()
+    {
         static $autoIndex = 1;
         static $autoIndexCaches = array();
         $key = sprintf('%s_%s_%s'
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']);
-        if(!isset($autoIndexCaches[$key])) {
-            if($autoIndex == 65535) {
+        if (!isset($autoIndexCaches[$key])) {
+            if ($autoIndex == 65535) {
                 $autoIndex = 1;
             }
             $autoIndexCaches[$key] = $autoIndex++;
@@ -144,6 +147,8 @@ class HsModel
             , $in_key
             , $inValues);
 
+        $result = $this->_associate($result, $columns);
+
         $this->_result = var_export($result, true);
         if (false === $result) {
             $this->_error = $_handler->getError();
@@ -166,11 +171,13 @@ class HsModel
         $_parser = $this->_parseFilters($filters);
         $_handler = $this->getHandlerSocketCache();
 
+        $_columns = array_keys($data);
+
         $_handler->openIndex($this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
-            , array_keys($data)
+            , $_columns
             , $_parser['field']);
 
         $result = $_handler->executeSingle($this->_autoIndex
@@ -181,6 +188,8 @@ class HsModel
             , $mode
             , array_values($data)
             , $_parser['filter']);
+
+        $result = $this->_associate($result, $_columns);
 
         $this->_result = var_export($result, true);
         if (false === $result) {
@@ -194,11 +203,13 @@ class HsModel
         $_parser = $this->_parseFilters($filters);
         $_handler = $this->getHandlerSocketCache();
 
+        $_columns = array_keys($data);
+
         $_handler->openIndex($this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
-            , array_keys($data)
+            , $_columns
             , $_parser['field']);
 
         $result = $_handler->executeUpdate($this->_autoIndex
@@ -208,6 +219,8 @@ class HsModel
             , $limit
             , $offset
             , $_parser['filter']);
+
+        $result = $this->_associate($result, $_columns);
 
         $this->_result = var_export($result, true);
         if (false === $result) {
@@ -235,6 +248,8 @@ class HsModel
             , $offset
             , $_parser['filter']);
 
+        $result = $this->_associate($result, $_parser['field']);
+
         $this->_result = var_export($result, true);
         if (false === $result) {
             $this->_error = $_handler->getError();
@@ -246,13 +261,18 @@ class HsModel
     {
         $_handler = $this->getHandlerSocketCache();
 
+        $_columns = array_keys($data);
+
         $_handler->openIndex($this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
-            , array_keys($data));
+            , $_columns);
 
-        $result = $_handler->executeInsert($this->_autoIndex, array_values($data));
+        $result = $_handler->executeInsert($this->_autoIndex
+            , array_values($data));
+
+        $result = $this->_associate($result, $_columns);
 
         $this->_result = var_export($result, true);
         if (false === $result) {
@@ -261,16 +281,32 @@ class HsModel
         return $result;
     }
 
+    private function _associate($result, $fields) {
+        if(!$this->_isAssociate || !is_array($result) || !$result) {
+            return $result;
+        }
+        $rets = array();
+        foreach($result as $row) {
+            $temp = array();
+            foreach ($row as $key => $unit) {
+                $temp[$fields[$key]] = $unit;
+            }
+            $rets[] = $temp;
+        }
+        return $rets;
+    }
+
     private function _parseFilters($filters)
     {
         $_f1 = null;
         $_f2 = null;
         if ($filters) {
             foreach ($filters as $filter) {
-                $_f1[] = $filter[0];
-                $_f2[] = array('F', $filter[1], $filter[0], $filter[2]);
+                $_f1[] = strval($filter[0]);
+                $_f2[] = array('F', $filter[1], strval($filter[0]), $filter[2]);
             }
         }
+
         return array(
             'field' => $_f1,
             'filter' => $_f2,
@@ -283,7 +319,7 @@ class HsModel
         $this->_traces['PORT:'] = $this->_config['port'];
         $this->_traces['DATABASE NAME:'] = $this->_config['dbname'];
         $this->_traces['TABLE NAME:'] = $this->_config['tbname'];
-        $this->_traces['AUTO INDEX ID:'] = $this->_autoIndex;
+        $this->_traces['CONNECT ID:'] = $this->_autoIndex;
         $this->_traces['CONSTRAINT:'] = $this->_config['primary'];
         $this->_traces['EXECUTE SQL:'] = '';
         $this->_traces['EXECUTE RESULT:'] = $this->_result;
@@ -292,7 +328,7 @@ class HsModel
                 ? 'ERROR'
                 : 'SUCCESS @(If result equal 0 or empty that Maybe the data was not exists.)';
 
-        if(isset($this->_errorInfos[$this->_error])) {
+        if (isset($this->_errorInfos[$this->_error])) {
             $errormsg = $this->_error
                 . ' @('
                 . sprintf($this->_errorInfos[$this->_error], $this->_config['primary'])
@@ -306,10 +342,22 @@ class HsModel
 
     public function trace()
     {
-        echo str_pad('', 31, '-') . 'DEBUG INFORMATION' . str_pad('', 32, '-') . PHP_EOL;
-        foreach ($this->_traces as $desc => $trace) {
-            echo '- ' . $desc . ' ' . $trace . PHP_EOL;
+        echo PHP_EOL;
+
+        echo str_pad('', 31, '*')
+            . 'DEBUG INFORMATION'
+            . str_pad('', 32, '*')
+            . PHP_EOL;
+
+        if (!$this->_traces) {
+            echo '- PLEASE OPEN DEBUG MODE' . PHP_EOL;
+        } else {
+            foreach ($this->_traces as $desc => $info) {
+                echo str_pad($desc, 16, ' ', STR_PAD_LEFT) . ' ' . $info . PHP_EOL;
+            }
         }
-        echo str_pad('', 80, '-') . PHP_EOL;
+
+        echo PHP_EOL;
+        $this->_traces = array();
     }
 }

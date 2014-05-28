@@ -105,6 +105,7 @@ class MainTask extends \Phalcon\CLI\Task
 
         $uid = 140112;
         $m = new TestModel($this->getDI());
+
 //        $m->getCountByUid($uid);
 //        $m->getCountByUid(1313123);
         for($i=0;$i<100;$i++) {
@@ -128,6 +129,29 @@ class MainTask extends \Phalcon\CLI\Task
             $m->addCount(2323128+$i);
             $m->addCount(231312899+$i);
         }
+    }
+
+    public function test6Action() {
+        $m = new UserRelationModel($this->getDI());
+        $m->getFansList(1231, 0, 15);
+
+
+        exit;
+        var_dump(UserCountModel::$partition);
+
+        exit;
+        $m = new FeedIndexModel($this->getDI());
+        $m->create();
+
+        exit;
+        $m = new UserCountModel($this->getDI());
+        $result = $m->getCountByUid(1);
+        $m->updateCount(1, 'follow_count', 1);
+        exit;
+        $m->getCountByUid(2);
+        $m->getCountByUid(3);
+
+//        $m->updateCount(1, 'follow_count', 1);
     }
 
 }

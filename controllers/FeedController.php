@@ -153,8 +153,6 @@ class FeedController extends CController
             'extends' => $extends,
         );
 
-        var_dump($queue, msgpack_pack(array(1,1,1,1)));
-
         $queue->put(msgpack_pack($data));
 
         $queue->disconnect();

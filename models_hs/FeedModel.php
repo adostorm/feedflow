@@ -5,58 +5,28 @@
  * Time: 下午5:04
  */
 
-class FeedModel extends \HsMysql\Model
+class FeedModel extends CommonModel
 {
 
-    /**
-     * 数据库名称
-     * @var string
-     */
-    public $dbname = 'db_feedcontent';
+    protected $DI = null;
 
-    /**
-     * 表名称
-     * @var string
-     */
-    public $tbname = 'feed_content';
+    protected $dbLink = 'link_db_feedcontent';
 
-    /**
-     * 主键
-     * @var string
-     */
-    public $index = 'PRIMARY';
+    protected $tbSuffix = 'feed_content';
 
-    /**
-     * redis Feed内容缓存Key
-     * @var string
-     */
-    public $cache_key = '';
+    protected $primary = 'PRIMARY';
 
-    /**
-     * 分表规则
-     * @var array
-     */
-    public $partition = array(
-        'field' => 'author_id',
-        'mode' => 'range',
-        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
-            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
-            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
-            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
-            27000000, 28000000, 29000000, 30000000, 1000000000),
-        'limit' => 399
-    );
+    protected $cache_key = '';
 
     /**
      * 构造函数
      *      初始化DI，缓存Key
-     * @param $di
+     * @param $DI
      */
-    public function __construct($di)
-    {
-        parent::__construct($di, '');
-        $this->cache_key =
-            \Util\ReadConfig::get('redis_cache_keys.feed_id_content', $this->getDi());
+    public function __construct($DI) {
+        $this->_DI = $DI;
+        $this->_cache_key =
+            \Util\ReadConfig::get('redis_cache_keys.feed_id_content', $DI);
     }
 
     /**
@@ -72,11 +42,11 @@ class FeedModel extends \HsMysql\Model
     public function create($data)
     {
 
-        $feedIndexModel = new FeedIndexModel($this->getDi());
+        $feedIndexModel = new FeedIndexModel($this->DI);
         $feed_id = $feedIndexModel->create();
 
         if ($feed_id) {
-            $userFeedModel = new UserFeedModel($this->getDi());
+            $userFeedModel = new UserFeedModel($this->DI);
             $isSuccess = $userFeedModel->create(array(
                 'app_id' => $data['app_id'],
                 'uid' => $data['author_id'],
@@ -84,7 +54,8 @@ class FeedModel extends \HsMysql\Model
                 'create_at' => $data['create_at'],
             ));
 
-            $isOk = $this->insert(array(
+            $model = $this->getPartitionModel($data['author_id']);
+            $isOk = $model->insert(array(
                 'feed_id' => (int)$feed_id,
                 'app_id' => (int)$data['app_id'],
                 'source_id' => (int)$data['source_id'],
@@ -98,19 +69,17 @@ class FeedModel extends \HsMysql\Model
                 'extends' => msgpack_pack($data['extends']),
             ));
 
-            var_dump($isOk , $isSuccess);
-
             if ($isOk && $isSuccess) {
-                $userFeedCountModel = new UserFeedCountModel($this->getDi());
+                $userFeedCountModel = new UserFeedCountModel($this->DI);
                 $userFeedCountModel->updateCount($data['app_id'], $data['author_id'], array(
                     'feed_count' => 1,
                     'unread_count' => 1,
                 ), 0, true);
 
                 $key = sprintf($this->cache_key, $feed_id);
-                $redis = \Util\RedisClient::getInstance($this->getDi());
+                $redis = \Util\RedisClient::getInstance($this->DI);
                 $redis->set($key, msgpack_pack($data),
-                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->DI));
 
                 return $feed_id;
             }
@@ -132,7 +101,7 @@ class FeedModel extends \HsMysql\Model
     {
         $key = sprintf($this->cache_key, $feed_id);
 
-        $redis = \Util\RedisClient::getInstance($this->getDi());
+        $redis = \Util\RedisClient::getInstance($this->DI);
         $result = $redis->get($key);
 
         if (false === $result) {
@@ -140,12 +109,13 @@ class FeedModel extends \HsMysql\Model
                 'object_type', 'object_id',
                 'author_id', 'author', 'content',
                 'create_at', 'attachment', 'extends');
-            $result = $this->field($fields)->setPartition($uid)->find($feed_id);
+            $model = $this->getPartitionModel($uid);
+            $result = $model->setField($fields)->find($feed_id);
 
             if ($result) {
                 $result['extends'] = msgpack_unpack($result['extends']);
                 $redis->set($key, msgpack_pack($result),
-                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->DI));
             }
         } else {
             $result = msgpack_unpack($result);

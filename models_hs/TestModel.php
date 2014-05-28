@@ -10,7 +10,7 @@ use HsMysql\AdvModel;
 use HsMysql\T;
 use Util\Partition;
 
-class TestModel extends AdvModel {
+class TestModel {
 
     private $_DI = null;
 
@@ -36,21 +36,21 @@ class TestModel extends AdvModel {
     }
 
     public function getCountByUid($uid) {
-        $model = $this->_getModel($uid);
+        $model = $this->_getParitionModel($uid);
         $result = $model->find($uid);
         $model->trace();
         return $result;
     }
 
     public function removeCount($uid) {
-        $model = $this->_getModel($uid);
+        $model = $this->_getParitionModel($uid);
         $result = $model->delete($uid);
         $model->trace();
         return $result;
     }
 
     public function updateCount($uid) {
-        $model = $this->_getModel($uid);
+        $model = $this->_getParitionModel($uid);
         $result = $model->update($uid, array(
             'follow_countss'=>100,
             'fans_count'=>89
@@ -60,7 +60,7 @@ class TestModel extends AdvModel {
     }
 
     public function addCount($uid) {
-        $model = $this->_getModel($uid);
+        $model = $this->_getParitionModel($uid);
         $result = $model->insert(array(
             'uid'=>$uid,
             'follow_count'=>10,
@@ -72,7 +72,7 @@ class TestModel extends AdvModel {
     }
 
     public function incrCount($uid) {
-        $model = $this->_getModel($uid);
+        $model = $this->_getPartitionModel($uid);
         $result = $model->decrement($uid, array(
             'follow_count'=>1,
         ));
@@ -80,15 +80,29 @@ class TestModel extends AdvModel {
         return $result;
     }
 
-    private function _getModel($key, $isPartition=true) {
-        if($isPartition) {
-            $partition = Partition::getInstance()
-                ->init($this->_link, $this->_tbSuffix, $this->_partition)
-                ->run($key);
-            $model = CModel::init($this->_DI, $partition->getLink(), $partition->getTbname());
-        } else {
-            $model = CModel::init($this->_DI, $this->_link, $this->_tbSuffix);
-        }
+    private function _getModel($key) {
+        $model = CModel::init(
+            $this->_DI,
+            $this->_link,
+            $this->_tbSuffix);
+
+        $model->setPrimary($this->_primary);
+        $model->setReport(true);
+        return $model;
+    }
+
+    private function _getPartitionModel($key) {
+        $partition = Partition::getInstance()->init(
+            $this->_link,
+            $this->_tbSuffix,
+            $this->_partition
+        )->run($key);
+
+        $model = CModel::init(
+            $this->_DI,
+            $partition->getLink(),
+            $partition->getTbname());
+
         $model->setPrimary($this->_primary);
         $model->setReport(true);
         return $model;

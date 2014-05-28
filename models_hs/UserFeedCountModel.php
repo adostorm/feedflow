@@ -5,25 +5,28 @@
  * Time: 下午5:04
  */
 
-class UserFeedCountModel extends \HsMysql\Model {
+class UserFeedCountModel extends CommonModel
+{
+
+    protected $DI = null;
 
     /**
      * 数据库名称
      * @var string
      */
-    public $dbname = 'db_countstate';
+    protected $dbLink = 'link_db_countstate';
 
     /**
      * 表名称
      * @var string
      */
-    public $tbname = 'user_feed_count';
+    protected $tbSuffix = 'user_feed_count';
 
     /**
      * 主键
      * @var string
      */
-    public $index = 'idx0';
+    protected $primary = 'idx0';
 
     /**
      * Redis 对象
@@ -34,31 +37,16 @@ class UserFeedCountModel extends \HsMysql\Model {
     private $counts_key = '';
 
     /**
-     * 分表规则
-     * @var array
-     */
-    public $partition = array(
-        'field' => 'uid',
-        'mode' => 'range',
-        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
-            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
-            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
-            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
-            27000000, 28000000, 29000000, 30000000, 1000000000),
-        'limit' => 399
-    );
-
-    /**
      * 初始化
-     * @param $di
+     * @param $DI
      */
-    public function __construct($di)
+    public function __construct($DI)
     {
-        parent::__construct($di, '');
+        $this->DI = $DI;
         $this->redis =
-            \Util\RedisClient::getInstance($di);
+            \Util\RedisClient::getInstance($DI);
         $this->counts_key =
-            \Util\ReadConfig::get('redis_cache_keys.user_appid_id_feedcounts', $di);
+            \Util\ReadConfig::get('redis_cache_keys.user_appid_id_feedcounts', $DI);
     }
 
     /**
@@ -73,16 +61,19 @@ class UserFeedCountModel extends \HsMysql\Model {
         $counts = $this->redis->get($key);
 
         if (false === $counts) {
-            $counts = $this
-                ->field('uid,app_id,feed_count,unread_count')
-                ->filter(array(
+            $model = $this->getPartitionModel($uid);
+            $counts = $model
+                ->setField('uid,app_id,feed_count,unread_count')
+                ->setFilter(array(
                     array('app_id', '=', $app_id),
-                ))
-                ->find($uid);
+                ))->find($uid);
+
             if ($counts) {
+                $counts = $counts[0];
                 $this->redis->set($key,
                     msgpack_pack($counts),
-                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->DI));
+
             }
         } else {
             $counts = msgpack_unpack($counts);
@@ -121,29 +112,31 @@ class UserFeedCountModel extends \HsMysql\Model {
         $updates = array();
         if (is_string($field)) {
             $updates[$field] = intval($num);
-        } else if(is_array($field)){
+        } else if (is_array($field)) {
             $updates = $field;
         }
+
+        $model = $this->getPartitionModel($uid);
         if (true === $incr) {
-            $result = $this->increment($uid, $updates);
+            $result = $model->increment($uid, $updates);
         } else if (false === $incr) {
-            $result = $this->decrement($uid, $updates);
+            $result = $model->decrement($uid, $updates);
         }
 
         if (0 === $result) {
-            $defalut = array(
-                'uid' => (int) $uid,
-                'app_id'=> (int) $app_id,
+            $default = array(
+                'uid' => (int)$uid,
+                'app_id' => (int)$app_id,
                 'feed_count' => 0,
-                'unread_count'=>0,
+                'unread_count' => 0,
             );
 
             if (true === $incr) {
-                $defalut = array_merge($defalut, $updates);
+                $default = array_merge($default, $updates);
             }
 
-            $affact = $this->insert($defalut);
-            $result = $affact;
+            $affect = $model->insert($default);
+            $result = $affect;
         }
 
         if ($result > 0) {
@@ -159,12 +152,14 @@ class UserFeedCountModel extends \HsMysql\Model {
      * @param $uid
      * @return mixed
      */
-    public function resetUnReadCount($app_id, $uid) {
-        $result = $this->filter(array(
+    public function resetUnReadCount($app_id, $uid)
+    {
+        $model = $this->getPartitionModel($uid);
+        $result = $model->setFilter(array(
             array('app_id', '=', $app_id),
         ))->update($uid, array(
-            'unread_count'=>0,
-        ));
+                'unread_count' => 0,
+            ));
         return $result;
     }
 

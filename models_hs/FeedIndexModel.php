@@ -5,26 +5,20 @@
  * Time: 下午3:52
  */
 
-class FeedIndexModel extends \HsMysql\Model
+class FeedIndexModel extends CommonModel
 {
 
-    /**
-     * 数据库名称
-     * @var string
-     */
-    public $dbname = 'db_countstate';
+    protected $DI = null;
 
-    /**
-     * 表名称
-     * @var string
-     */
-    public $tbname = 'feed_index';
+    protected $dbLink = 'link_db_countstate';
 
-    /**
-     * 主键
-     * @var string
-     */
-    public $index = 'PRIMARY';
+    protected $tbSuffix = 'feed_index';
+
+    protected $primary = 'PRIMARY';
+
+    public function __construct($DI) {
+        $this->DI = $DI;
+    }
 
     /**
      * 创建Feed索引，也就是主键的自增ID
@@ -32,9 +26,11 @@ class FeedIndexModel extends \HsMysql\Model
      */
     public function create()
     {
-        return $this->insert(array(
+        $model = $this->getModel();
+        $result =  $model->insert(array(
             'id' => null,
         ));
+        return $result;
     }
 
 }

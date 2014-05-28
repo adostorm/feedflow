@@ -5,26 +5,16 @@
  * Time: 下午5:03
  */
 
-class UserCountModel extends \HsMysql\Model
+class UserCountModel extends CommonModel
 {
 
-    /**
-     * 数据库名称
-     * @var string
-     */
-    public $dbname = 'db_countstate';
+    protected $DI = null;
 
-    /**
-     * 表名称
-     * @var string
-     */
-    public $tbname = 'user_count';
+    protected $dbLink = 'link_db_countstate';
 
-    /**
-     * 主键
-     * @var string
-     */
-    public $index = 'PRIMARY';
+    protected $tbSuffix = 'user_count';
+
+    protected $primary = 'PRIMARY';
 
     /**
      * Redis 对象
@@ -41,44 +31,29 @@ class UserCountModel extends \HsMysql\Model
      * 大V缓存Key
      * @var string
      */
-    public $cache_big_v_set = '';
+    protected $cache_big_v_set = '';
 
     /**
      * 大V Level配置的值，当好友的粉丝大于这个值时，成为大V
      * @var string
      */
-    public $big_v_level = '';
-
-    /**
-     * 分表规则
-     * @var array
-     */
-    public $partition = array(
-        'field' => 'uid',
-        'mode' => 'range',
-        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
-            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
-            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
-            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
-            27000000, 28000000, 29000000, 30000000, 1000000000),
-        'limit' => 399
-    );
+    protected $big_v_level = '';
 
     /**
      * 初始化
-     * @param $di
+     * @param $DI
      */
-    public function __construct($di)
+    public function __construct($DI)
     {
-        parent::__construct($di, '');
+        $this->DI = $DI;
         $this->redis =
-            \Util\RedisClient::getInstance($di);
+            \Util\RedisClient::getInstance($DI);
         $this->counts_key =
-            \Util\ReadConfig::get('redis_cache_keys.user_id_counts', $di);
+            \Util\ReadConfig::get('redis_cache_keys.user_id_counts', $DI);
         $this->cache_big_v_set =
-            \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
+            \Util\ReadConfig::get('redis_cache_keys.big_v_set', $DI);
         $this->big_v_level =
-            \Util\ReadConfig::get('setting.big_v_level', $this->getDi());
+            \Util\ReadConfig::get('setting.big_v_level', $DI);
     }
 
     /**
@@ -92,13 +67,13 @@ class UserCountModel extends \HsMysql\Model
         $counts = $this->redis->get($key);
 
         if (false === $counts) {
-            $counts = $this
-                ->field('uid,follow_count,fans_count')
-                ->find($uid);
+            $model = $this->getPartitionModel($uid);
+            $counts = $model->setField('uid,follow_count,fans_count')->find($uid);
             if ($counts) {
+                $counts = $counts[0];
                 $this->redis->set($key,
-                    msgpack_pack($counts),
-                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->getDi()));
+                    msgpack_pack($counts[0]),
+                    \Util\ReadConfig::get('setting.cache_timeout_t1', $this->DI));
             }
         } else {
             $counts = msgpack_unpack($counts);
@@ -138,25 +113,28 @@ class UserCountModel extends \HsMysql\Model
         } else if(is_array($field)){
             $updates = $field;
         }
+
+        $model = $this->getPartitionModel($uid);
+
         if (true === $incr) {
-            $result = $this->increment($uid, $updates);
+            $result = $model->increment($uid, $updates);
         } else if (false === $incr) {
-            $result = $this->decrement($uid, $updates);
+            $result = $model->decrement($uid, $updates);
         }
 
         if (0 === $result) {
-            $defalut = array(
-                'uid' => (int)$uid,
+            $default = array(
+                'uid' => (int) $uid,
                 'follow_count' => 0,
                 'fans_count' => 0,
             );
 
             if (true === $incr) {
-                $defalut = array_merge($defalut, $updates);
+                $default = array_merge($default, $updates);
             }
 
-            $affact = $this->insert($defalut);
-            $result = $affact;
+            $affect = $model->insert($default);
+            $result = $affect;
         }
 
         if ($result > 0) {
@@ -180,9 +158,10 @@ class UserCountModel extends \HsMysql\Model
             $temps = $this->partition['step'];
             array_pop($temps);
             foreach ($temps as $step) {
-                $results = $this->field('uid,fans_count')->filter(array(
+                $model = $this->getPartitionModel($step);
+                $results = $model->setField('uid,fans_count')->setFilter(array(
                     array('fans_count', '>=', $this->big_v_level),
-                ))->limit(0, 2000)->setPartition($step)->find(0, '>');
+                ))->setLimit(0, 2000)->find(0, '>');
 
                 if ($results) {
                     $this->redis->pipeline();

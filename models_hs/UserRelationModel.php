@@ -5,26 +5,28 @@
  * Time: 上午11:22
  */
 
-class UserRelationModel extends \HsMysql\Model
+class UserRelationModel extends CommonModel
 {
+
+    protected $DI = null;
 
     /**
      * 数据库名称
      * @var string
      */
-    public $dbname = 'db_userstate';
+    protected $dbLink = 'link_db_userstate';
 
     /**
      * 表名称
      * @var string
      */
-    public $tbname = 'user_relation';
+    protected $tbSuffix = 'user_relation';
 
     /**
      * 主键
      * @var string
      */
-    public $index = 'idx0';
+    protected $primary = 'idx0';
 
     /**
      * 主键
@@ -39,30 +41,15 @@ class UserRelationModel extends \HsMysql\Model
     public $cache_big_v_set = '';
 
     /**
-     * 分表规则
-     * @var array
-     */
-    public $partition = array(
-        'field' => 'uid',
-        'mode' => 'range',
-        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
-            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
-            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
-            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
-            27000000, 28000000, 29000000, 30000000, 1000000000),
-        'limit' => 399
-    );
-
-    /**
      * 初始化
-     * @param $di
+     * @param $DI
      */
-    public function __construct($di)
+    public function __construct($DI)
     {
-        parent::__construct($di, '');
-        $this->redis = \Util\RedisClient::getInstance($this->getDI());
+        $this->DI = $DI;
+        $this->redis = \Util\RedisClient::getInstance($DI);
         $this->cache_big_v_set =
-            \Util\ReadConfig::get('redis_cache_keys.big_v_set', $this->getDi());
+            \Util\ReadConfig::get('redis_cache_keys.big_v_set', $DI);
     }
 
     /**
@@ -82,11 +69,11 @@ class UserRelationModel extends \HsMysql\Model
         if ($uid == $friend_uid) {
             return -98;
         }
-        $this->setIsAssociate(false);
-        $result = $this->field('status')->filter(array(
+        $model = $this->getPartitionModel($uid);
+        $result = $model->setField('status')->setFilter(array(
             array('friend_uid', '=', $friend_uid)
         ))->find($uid);
-        return isset($result[0]) ? intval($result[0]) : -99;
+        return isset($result[0]) ? intval($result[0]['status']) : -99;
     }
 
     /**
@@ -105,17 +92,20 @@ class UserRelationModel extends \HsMysql\Model
 
         $tempStatus = $status;
 
+        $uidModel = $this->getPartitionModel($uid);
+        $friendUidModel = $this->getPartitionModel($friend_uid);
+
         switch ($status) {
             case -99:
                 $status = 0;
                 $time = time();
-                $this->insert(array(
+                $uidModel->insert(array(
                     'uid' => $uid,
                     'friend_uid' => $friend_uid,
                     'status' => 0,
                     'create_at' => $time,
                 ));
-                $this->insert(array(
+                $friendUidModel->insert(array(
                     'uid' => $friend_uid,
                     'friend_uid' => $uid,
                     'status' => 2,
@@ -125,12 +115,12 @@ class UserRelationModel extends \HsMysql\Model
 
             case -1:
                 $status = 0;
-                $this->filter(array(
+                $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => 0
                     ));
-                $this->filter(array(
+                $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
                         'status' => 2
@@ -139,12 +129,12 @@ class UserRelationModel extends \HsMysql\Model
 
             case 2:
                 $status = 1;
-                $this->filter(array(
+                $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => 1
                     ));
-                $this->filter(array(
+                $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
                         'status' => 1
@@ -153,7 +143,7 @@ class UserRelationModel extends \HsMysql\Model
         }
 
         if (in_array($tempStatus, array(-99, -1, 2))) {
-            $countModel = new UserCountModel($this->getDi());
+            $countModel = new UserCountModel($this->DI);
             $countModel->updateCount($uid, 'follow_count', 1, true);
             $countModel->updateCount($friend_uid, 'fans_count', 1, true);
 
@@ -179,15 +169,18 @@ class UserRelationModel extends \HsMysql\Model
 
         $tempStatus = $status;
 
+        $uidModel = $this->getPartitionModel($uid);
+        $friendUidModel = $this->getPartitionModel($friend_uid);
+
         switch ($status) {
             case 0:
                 $status = -1;
-                $this->filter(array(
+                $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => -1
                     ));
-                $this->filter(array(
+                $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
                         'status' => -1
@@ -196,12 +189,12 @@ class UserRelationModel extends \HsMysql\Model
 
             case 1:
                 $status = 2;
-                $this->filter(array(
+                $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => 2
                     ));
-                $this->filter(array(
+                $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
                         'status' => 0
@@ -210,7 +203,7 @@ class UserRelationModel extends \HsMysql\Model
         }
 
         if (in_array($tempStatus, array(0, 1))) {
-            $countModel = new UserCountModel($this->getDi());
+            $countModel = new UserCountModel($this->DI);
             $countModel->updateCount($uid, 'follow_count', 1, false);
             $countModel->updateCount($friend_uid, 'fans_count', 1, false);
 
@@ -229,10 +222,14 @@ class UserRelationModel extends \HsMysql\Model
      */
     public function getFollowList($uid, $offset = 0, $limit = 15)
     {
-        $results = $this->field('friend_uid')->filter(array(
-            array('status', '>=', 0),
-            array('status', '<=', 1),
-        ))->limit($offset, $limit)->find($uid);
+        $model = $this->getPartitionModel($uid);
+        $results = $model
+            ->setField('friend_uid')
+            ->setLimit($offset, $limit)
+            ->setFilter(array(
+                array('status', '>=', 0),
+                array('status', '<=', 1),
+            ))->find($uid);
 
         $rets = array();
         if($results) {
@@ -255,9 +252,13 @@ class UserRelationModel extends \HsMysql\Model
      */
     public function getFansList($uid, $offset = 0, $limit = 15)
     {
-        $results = $this->field('friend_uid')->filter(array(
-            array('status', '>', 0),
-        ))->limit($offset, $limit)->find($uid);
+        $model = $this->getPartitionModel($uid);
+        $results = $model
+            ->setField('friend_uid')
+            ->setLimit($offset, $limit)
+            ->setFilter(array(
+                array('status', '>', 0),
+            ))->find($uid);
         return $results;
     }
 
@@ -279,9 +280,14 @@ class UserRelationModel extends \HsMysql\Model
             $friend_uids = $tmp;
             unset($tmp);
         }
-        $results = $this->field('friend_uid,status')->filter(array(
-            array('status', '>=', 0),
-        ))->in($friend_uids)->setPartition($uid)->find($uid);
+        $model = $this->getPartitionModel($uid);
+
+        $results = $model
+            ->setField('friend_uid,status')
+            ->setInValues($friend_uids)
+            ->setFilter(array(
+                array('status', '>=', 0),
+            ))->find($uid);
 
         return $results;
     }

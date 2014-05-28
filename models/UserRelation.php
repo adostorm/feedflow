@@ -42,28 +42,13 @@ class UserRelation extends AdvModel
      * 数据库名称
      * @var string
      */
-    public $dbname = 'db_userstate';
+    public $dbLink = 'link_db_userstate';
 
     /**
      * 表名称
      * @var string
      */
-    public $tbname = 'user_relation';
-
-    /**
-     * 分库分表规则
-     * @var array
-     */
-    public $partition = array(
-        'field' => 'uid',
-        'mode' => 'range',
-        'step' => array(1, 1000000, 2000000, 3000000, 4000000, 5000000,
-            6000000, 7000000, 8000000, 9000000, 10000000, 11000000, 12000000,
-            13000000, 14000000, 15000000, 16000000, 17000000, 18000000, 19000000,
-            20000000, 21000000, 22000000, 23000000, 24000000, 25000000, 26000000,
-            27000000, 28000000, 29000000, 30000000, 1000000000),
-        'limit' => 399
-    );
+    public $tbSuffix  = 'user_relation';
 
     /**
      * @param int $create_at
