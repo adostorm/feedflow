@@ -32,10 +32,6 @@ class CModel
 
     private $_inValues = null;
 
-    private $_sql = '';
-
-    private $_isFocusTrace = false;
-
     private $_DI = null;
 
     private $_link = '';
@@ -102,15 +98,6 @@ class CModel
         return $this;
     }
 
-    /**
-     * @param boolean $isFocusTrace
-     * @return $this
-     */
-    public function setIsFocusTrace($isFocusTrace)
-    {
-        $this->_isFocusTrace = $isFocusTrace;
-        return $this;
-    }
 
     public function setLimit($offset = 0, $limit = 1)
     {
@@ -139,8 +126,6 @@ class CModel
         $this->_field = '';
         $this->_filter = null;
         $this->_inValues = null;
-        $this->_sql = '';
-        $this->_isFocusTrace = false;
     }
 
     private function _parseStringToArray($string = '')
@@ -168,7 +153,9 @@ class CModel
             if ($mode == T::READ) {
                 $slaves =
                     ReadConfig::get("{$this->_link}.slaves", $this->_DI)->toArray();
-                if ($slaves) {
+                $readSlave =
+                    ReadConfig::get("open_read_slave", $this->_DI);
+                if ($slaves && $readSlave) {
                     $rnd = array_rand($slaves);
                     $config['host'] = $slaves[$rnd]['host'];
                     $config['dbname'] = $slaves[$rnd]['dbname'];
@@ -453,7 +440,7 @@ class CModel
 
         $_logStr = implode(PHP_EOL, $_log);
 
-        if(isset($_REQUEST['report']) && $_REQUEST['report']) {
+        if(isset($_REQUEST['_report_']) && $_REQUEST['_report_']) {
             echo $_logStr;
         } else {
             $filePath = ReadConfig::get('application.path', $this->_DI).'log/'.date('Y-m-d').'.log';

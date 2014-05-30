@@ -42,7 +42,7 @@ foreach ($config as $k => $v) {
             }
         }
         $di->set($k, function () use ($v) {
-            return new DbAdapter($v);
+            return new DbAdapter($v->toArray());
         });
     }
 }

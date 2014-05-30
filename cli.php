@@ -55,7 +55,7 @@ if (is_readable(APPLICATION_PATH . '/config/config.php')) {
                 }
             }
             $di->set($k, function () use ($v) {
-                return new DbAdapter($v);
+                return new DbAdapter($v->toArray());
             });
         }
     }

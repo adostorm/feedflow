@@ -48,6 +48,40 @@ class FeedTask extends \Phalcon\CLI\Task
         $this->q1->watch($this->k1);
         $model = new FeedModel($this->getDI());
 
+        while (false !== $this->q1->peekReady()) {
+            $job = $this->q1->reserve();
+
+            $old = $job->getBody();
+            $new = msgpack_unpack($old);
+            $feed_id = $model->create($new);
+
+            if ($feed_id) {
+                $this->q2->choose(sprintf($this->k2, 1/*$feed_id % 10*/));
+                $this->q2->put(sprintf('%d|%d|%d|%d'
+                    , $new['app_id'], $new['author_id'], $feed_id, $new['create_at']));
+
+                $_key = sprintf($this->cache_key, $new['app_id']);
+                $this->redis->zadd($_key, -$new['create_at'], $old);
+                if ($this->redis->zcard($_key) > 1000) {
+                    $this->redis->zremrangebyrank($_key, 501, -1);
+                }
+
+                $job->delete();
+            } else {
+                $job->bury();
+            }
+        }
+
+        if ($this->q1) {
+            $this->q1->disconnect();
+        }
+        if ($this->q2) {
+            $this->q2->disconnect();
+        }
+
+
+        exit;
+
         try {
             while (1) {
                 while (false !== $this->q1->peekReady()) {

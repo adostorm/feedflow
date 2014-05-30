@@ -20,7 +20,6 @@ SET @sql = "
 	) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8
 ";
 CALL test.create_table('db_countstate', 'feed_index', 0, 0, FALSE, @sql);
-#CALL test.delete_table('db_countstate', 'feed_index', 0, 0, );
 
 
 -- 创建user_count

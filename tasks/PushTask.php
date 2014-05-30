@@ -50,6 +50,44 @@ class PushTask extends \Phalcon\CLI\Task
         $userFeedCountModel = new UserFeedCountModel($this->getDI());
 
 
+        while (false !== $this->q->peekReady()) {
+            $job = $this->q->reserve();
+            $data = $job->getBody();
+
+            list($app_id, $uid, $feed_id, $time) = explode('|', $data);
+            if ($countRelation->setBigv($uid)) {
+                $job->delete();
+                continue;
+            }
+            $results = $userRelation->getFansList($uid, 0, $this->bigv_key);
+
+            if ($results) {
+                foreach ($results as $result) {
+                    $feedRelation->create(array(
+                        'app_id' => $app_id,
+                        'uid' => $result['friend_uid'],
+                        'feed_id' => $feed_id,
+                        'create_at' => $time,
+                    ));
+                    $userFeedCountModel->updateCount(
+                        $data['app_id']
+                        , $result['friend_uid']
+                        , 'unread_count'
+                        , 1, true);
+                }
+
+            }
+
+            $job->delete();
+        }
+
+        if ($this->q) {
+            $this->q->disconnect();
+        }
+
+        exit;
+
+
         try {
             while (1) {
                 while (false !== $this->q->peekReady()) {
@@ -73,8 +111,8 @@ class PushTask extends \Phalcon\CLI\Task
                             ));
                             $userFeedCountModel->updateCount(
                                 $data['app_id']
-                                , $data['author_id']
-                                , 'feed_count'
+                                , $result['friend_uid']
+                                , 'unread_count'
                                 , 1, true);
                         }
 

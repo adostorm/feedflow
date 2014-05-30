@@ -41,7 +41,6 @@ class FeedModel extends CommonModel
      */
     public function create($data)
     {
-
         $feedIndexModel = new FeedIndexModel($this->DI);
         $feed_id = $feedIndexModel->create();
 

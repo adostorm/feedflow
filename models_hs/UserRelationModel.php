@@ -92,19 +92,20 @@ class UserRelationModel extends CommonModel
 
         $tempStatus = $status;
 
-        $uidModel = $this->getPartitionModel($uid);
-        $friendUidModel = $this->getPartitionModel($friend_uid);
-
         switch ($status) {
             case -99:
                 $status = 0;
                 $time = time();
+
+                $uidModel = $this->getPartitionModel($uid);
                 $uidModel->insert(array(
                     'uid' => $uid,
                     'friend_uid' => $friend_uid,
                     'status' => 0,
                     'create_at' => $time,
                 ));
+
+                $friendUidModel = $this->getPartitionModel($friend_uid);
                 $friendUidModel->insert(array(
                     'uid' => $friend_uid,
                     'friend_uid' => $uid,
@@ -115,11 +116,15 @@ class UserRelationModel extends CommonModel
 
             case -1:
                 $status = 0;
+
+                $uidModel = $this->getPartitionModel($uid);
                 $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => 0
                     ));
+
+                $friendUidModel = $this->getPartitionModel($friend_uid);
                 $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
@@ -129,11 +134,15 @@ class UserRelationModel extends CommonModel
 
             case 2:
                 $status = 1;
+
+                $uidModel = $this->getPartitionModel($uid);
                 $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => 1
                     ));
+
+                $friendUidModel = $this->getPartitionModel($friend_uid);
                 $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
@@ -169,17 +178,18 @@ class UserRelationModel extends CommonModel
 
         $tempStatus = $status;
 
-        $uidModel = $this->getPartitionModel($uid);
-        $friendUidModel = $this->getPartitionModel($friend_uid);
-
         switch ($status) {
             case 0:
                 $status = -1;
+
+                $uidModel = $this->getPartitionModel($uid);
                 $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => -1
                     ));
+
+                $friendUidModel = $this->getPartitionModel($friend_uid);
                 $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(
@@ -189,11 +199,15 @@ class UserRelationModel extends CommonModel
 
             case 1:
                 $status = 2;
+
+                $uidModel = $this->getPartitionModel($uid);
                 $uidModel->setFilter(array(
                     array('friend_uid', '=', $friend_uid),
                 ))->update($uid, array(
                         'status' => 2
                     ));
+
+                $friendUidModel = $this->getPartitionModel($friend_uid);
                 $friendUidModel->setFilter(array(
                     array('friend_uid', '=', $uid),
                 ))->update($friend_uid, array(

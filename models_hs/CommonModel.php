@@ -27,6 +27,7 @@ class CommonModel {
             $this->tbSuffix);
 
         $model->setPrimary($this->primary);
+
         return $model;
     }
 
@@ -43,6 +44,7 @@ class CommonModel {
             $partition->getTbname());
 
         $model->setPrimary($this->primary);
+
         return $model;
     }
 
