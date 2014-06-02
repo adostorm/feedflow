@@ -7,8 +7,9 @@
 
 namespace HsMysql;
 
-use HsMysql\Op;
-use HsMysql\Filter;
+use HsMysql\Operate;
+use HsMysql\CriteriaCollection;
+
 
 class HsModel
 {
@@ -27,9 +28,14 @@ class HsModel
     private $_errorInfos = array(
         '121' => "Either Duplicate entry for key '%s' or table was not exists",
         'unauth' => 'Must be auth or Has an error with password',
-        'xx' => '[handlersocket] unable to connect 1:1',
         'stmtnum' => 'Either field has not founded or [table | data] was not exists',
-        'op'=>'Error with operate character',
+        'op'=>'Invalid operate character, Just support "=", "<", "<=", ">", ">="',
+        'filterfld' => 'Require openIndex filter string',
+        'xx' => '[handlersocket] unable to connect 1:1',
+
+        ### 自定义的错误类型
+        '_empty_columnfld'=>'Require a field, eg: SELECT [field1, field2, ...] FROM [table] [where ...]',
+        '_empty_multi_args'=>'Require criteria collection, Just search support and insert | update | delete is ignored',
     );
 
     /**
@@ -121,8 +127,13 @@ class HsModel
         return $autoIndexCaches[$key];
     }
 
-    public function find($key, $columns, $operate = Op::EQ, $offset = 0, $limit = 1, $filters = array(), $inValues = array())
+    public function find($key, $columns, $operate = Operate::EQ, $offset = 0, $limit = 1, $filters = array(), $inValues = array())
     {
+        if(!$columns) {
+            $this->_error = '_empty_columnfld';
+            return false;
+        }
+
         $_parser = $this->_parseFilters($filters);
         $in_key = -1;
         if ($inValues) {
@@ -130,14 +141,16 @@ class HsModel
         }
         $_handler = $this->getHandlerSocketCache();
 
-        $_handler->openIndex($this->_autoIndex
+        $_handler->openIndex(
+            $this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
             , $columns
-            , $_parser['field']);
+            , $_parser['filterField']);
 
-        $result = $_handler->executeSingle($this->_autoIndex
+        $result = $_handler->executeSingle(
+            $this->_autoIndex
             , $operate
             , array($key)
             , $limit
@@ -148,7 +161,7 @@ class HsModel
             , $in_key
             , $inValues);
 
-        $result = $this->_associate($result, $columns);
+        $result = $this->_parseAssociate($result, $columns);
 
         if (false === $result) {
             $this->_error = $_handler->getError();
@@ -166,19 +179,21 @@ class HsModel
         return $this->_countUpdate($key, $data, '-');
     }
 
-    private function _countUpdate($key, $data, $mode = '+', $operate = Op::EQ, $offset = 0, $limit = 1, $filters = array())
+    private function _countUpdate($key, $data, $mode = '+', $operate = Operate::EQ, $offset = 0, $limit = 1, $filters = array())
     {
         $_parser = $this->_parseFilters($filters);
         $_handler = $this->getHandlerSocketCache();
 
-        $_handler->openIndex($this->_autoIndex
+        $_handler->openIndex(
+            $this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
             , array_keys($data)
-            , $_parser['field']);
+            , $_parser['filterField']);
 
-        $result = $_handler->executeSingle($this->_autoIndex
+        $result = $_handler->executeSingle(
+            $this->_autoIndex
             , $operate
             , array($key)
             , $limit
@@ -193,19 +208,21 @@ class HsModel
         return $result;
     }
 
-    public function update($key, $data, $operate = Op::EQ, $offset = 0, $limit = 1, $filters = array())
+    public function update($key, $data, $operate = Operate::EQ, $offset = 0, $limit = 1, $filters = array())
     {
         $_parser = $this->_parseFilters($filters);
         $_handler = $this->getHandlerSocketCache();
 
-        $_handler->openIndex($this->_autoIndex
+        $_handler->openIndex(
+            $this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
             , array_keys($data)
-            , $_parser['field']);
+            , $_parser['filterField']);
 
-        $result = $_handler->executeUpdate($this->_autoIndex
+        $result = $_handler->executeUpdate(
+            $this->_autoIndex
             , $operate
             , array($key)
             , array_values($data)
@@ -219,26 +236,26 @@ class HsModel
         return $result;
     }
 
-    public function delete($key, $operate = Op::EQ, $offset = 0, $limit = 1, $filters = array())
+    public function delete($key, $operate = Operate::EQ, $offset = 0, $limit = 1, $filters = array())
     {
         $_parser = $this->_parseFilters($filters);
         $_handler = $this->getHandlerSocketCache();
 
-        $_handler->openIndex($this->_autoIndex
+        $_handler->openIndex(
+            $this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
-            , $_parser['field']
-            , $_parser['field']);
+            , $_parser['filterField']
+            , $_parser['filterField']);
 
-        $result = $_handler->executeDelete($this->_autoIndex
+        $result = $_handler->executeDelete(
+            $this->_autoIndex
             , $operate
             , array($key)
             , $limit
             , $offset
             , $_parser['filter']);
-
-        $result = $this->_associate($result, $_parser['field']);
 
         if (false === $result) {
             $this->_error = $_handler->getError();
@@ -265,54 +282,64 @@ class HsModel
             , array_values($data)
         );
 
-        $result = $this->_associate($result, $_columns);
-
         if (false === $result) {
             $this->_error = $_handler->getError();
         }
         return $result;
     }
 
-    public function multiFind($key, $operate='=', $columns, Filter $filter) {
+    public function multi($columns, CriteriaCollection $criteriaCollection) {
+        if(!$columns) {
+            $this->_error = '_empty_columnfld';
+            return false;
+        }
+
+        $args = array();
+        foreach($criteriaCollection->toArray() as $criteria) {
+            if(!$criteria->getUpdate()) {
+                $_parser = $this->_parseMultiFilters(
+                    $criteria->getFilters(),
+                    $criteriaCollection->getFilterFields()
+                );
+                $args[] = array(
+                    $this->_autoIndex,
+                    $criteria->getOperate(),
+                    array($criteria->getKey()),
+                    (int) $criteria->getLimit(),
+                    (int) $criteria->getOffset(),
+                    $criteria->getUpdate(),
+                    $criteria->getValues(),
+                    $_parser,
+                    (int) $criteria->getInKey(),
+                    $criteria->getInValues(),
+                );
+            }
+        }
+
+        if(!$args) {
+            $this->_error = '_empty_multi_args';
+            return false;
+        }
+
         $_handler = $this->getHandlerSocketCache();
-
-        $_metas = $filter->getMetas();
-
         $_handler->openIndex(
             $this->_autoIndex
             , $this->_config['dbname']
             , $this->_config['tbname']
             , $this->_config['primary']
             , $columns
+            , $criteriaCollection->getFilterFields()
         );
-
-        $args = array();
-        foreach($_metas as $_meta) {
-            $_parser = $this->_parseFilters(array($_meta));
-            $args[] = array(
-                $this->_autoIndex,
-                $operate,
-                array($key),
-                1,
-                0,
-                null,
-                null,
-                $_parser['filter']
-            );
-        }
 
         $result = $_handler->executeMulti($args);
 
-        if (false === $result) {
-            $this->_error = $_handler->getError();
-        }
+        $result = $this->_parseMultiAssociate($result, $columns);
+
+        $this->_error = $_handler->getError();
         return $result;
     }
 
-    private function _associate($result, $fields) {
-        if(!$this->_isAssociate || !is_array($result) || !$result) {
-            return $result;
-        }
+    private function _parseCommonAssociate($result, $fields) {
         $rets = array();
         foreach($result as $row) {
             $temp = array();
@@ -324,47 +351,130 @@ class HsModel
         return $rets;
     }
 
+    private function _parseAssociate($result, $fields) {
+        if(!$this->_isAssociate || !is_array($result) || !$result) {
+            return $result;
+        }
+        return $this->_parseCommonAssociate($result, $fields);
+    }
+
+    private function _parseMultiAssociate($result, $fields) {
+        if(!$this->_isAssociate) {
+            return $result;
+        }
+        $rets = array();
+        foreach($result as $row) {
+            if($row) {
+                $rets[] = $this->_parseCommonAssociate($row, $fields);
+            } else {
+                $rets[] = $row;
+            }
+        }
+        return $rets;
+    }
+
+    public function parseMultiAssemble($result, $isAssemble=true) {
+        if($isAssemble) {
+            $rets = array();
+            foreach($result as $row) {
+                if($row) {
+                    foreach($row as $_sub) {
+                        $rets[] = $_sub;
+                    }
+                }
+            }
+            return $rets;
+        }
+        return $result;
+    }
+
     private function _parseFilters($filters)
     {
         $_f1 = null;
         $_f2 = null;
-        if ($filters) {
-            foreach ($filters as $filter) {
-                $_f1[] = strval($filter[0]);
-                $_f2[] = array('F', $filter[1], strval($filter[0]), $filter[2]);
-            }
+        foreach ($filters as $k=>$filter) {
+            $_f1[] = strval($filter[0]);
+            $_f2[] = array('F', $filter[1], $k, $filter[2]);
         }
 
         return array(
-            'field' => $_f1,
+            'filterField' => $_f1,
             'filter' => $_f2,
         );
     }
 
+    private function _parseMultiFilters($filters, $filterField) {
+        $_f = null;
+        foreach ($filters as $filter) {
+            $k = array_search($filter[0], $filterField);
+            $_f[] = array('F', $filter[1], $k, $filter[2]);
+        }
+        return $_f;
+    }
+
+    private function _highlight($text, $num) {
+        if(PHP_SAPI == 'cli') {
+            return chr(27).'['.$num.'m'.$text.chr(27).'[0m';
+        }
+        return $text;
+    }
+
     public function getTraces()
     {
-        $_traces['HOST:'] = $this->_config['host'];
-        $_traces['PORT:'] = $this->_config['port'];
-        $_traces['DATABASE NAME:'] = $this->_config['dbname'];
-        $_traces['TABLE NAME:'] = $this->_config['tbname'];
-        $_traces['CONNECT ID:'] = $this->_autoIndex;
-        $_traces['CONSTRAINT:'] = $this->_config['primary'];
-        $_traces['EXECUTE SQL:'] = '';
-        $_traces['EXECUTE RESULT:'] = '';
-        $_traces['EXECUTE STATUS:'] =
-            $this->_error
-                ? 'ERROR'
-                : 'SUCCESS @(If result equal 0 or empty that Maybe the data was not exists.)';
+        $_traces = array(
+            'HOST:'=>$this->_config['host'],
+            'PORT:'=>$this->_config['port'],
+            'DATABASE STATUS:'=>'',
+            'DATABASE NAME:'=>$this->_config['dbname'],
+            'TABLE NAME:'=>$this->_config['tbname'],
+            'CONNECT ID:'=>$this->_autoIndex,
+            'CONSTRAINT:'=>$this->_config['primary'],
+            'ERROR INFO:'=>'',
+            'EXECUTE STATUS:'=>'',
+            'EXECUTE SQL:'=>'',
+            'EXECUTE RESULT:'=>'',
+        );
 
-        if (isset($this->_errorInfos[$this->_error])) {
-            $errormsg = $this->_error
-                . ' @('
-                . sprintf($this->_errorInfos[$this->_error], $this->_config['primary'])
-                . ', Please check it and then try again.)';
-        } else {
-            $errormsg = $this->_error;
+        $redColor = 31;
+        $greenColor = 32;
+
+        if(is_array($this->_error)) {
+            $_traces[''] = str_pad('', 20, '=')." multi information ".str_pad('', 20, '=');
+            foreach($this->_error as $k=>$_err) {
+                if($_err) {
+                    $_traces['EXECUTE STATUS '.$k.':'] = $this->_highlight('ERROR', $redColor);
+
+                    if (isset($this->_errorInfos[$_err])) {
+                        $errormsg = $_err
+                            . ' @('
+                            . $this->_errorInfos[$_err]
+                            . ', Please check it and then try again.)';
+                    } else {
+                        $errormsg = $_err;
+                    }
+
+                    $_traces['ERROR INFO '.$k.':'] =
+                        $this->_highlight($errormsg, $redColor);
+                }
+            }
+        } else if($this->_error) {
+            $_traces['EXECUTE STATUS :'] = $this->_highlight('ERROR', $redColor);
+            if (isset($this->_errorInfos[$this->_error])) {
+                $errormsg = $this->_error
+                    . ' @('
+                    . sprintf($this->_errorInfos[$this->_error], $this->_config['primary'])
+                    . ', Please check it and then try again.)';
+            } else {
+                $errormsg = $this->_error;
+            }
+            $_traces['ERROR INFO:'] = $this->_highlight($errormsg, $redColor);
         }
-        $_traces['ERROR INFO:'] = $errormsg;
+
+        if(empty($_traces['EXECUTE STATUS:'])) {
+            $_traces['EXECUTE STATUS:'] = $this->_highlight('SUCCESS', $greenColor).' @(If result equal 0 or empty that Maybe the data was not exists.)';
+            $_traces['ERROR INFO:'] = '';
+        }
+
         return $_traces;
     }
 
@@ -376,7 +486,7 @@ class HsModel
         echo PHP_EOL;
 
         echo str_pad('', 31, '*')
-            . 'DEBUG INFORMATION'
+            . ' DEBUG INFORMATION '
             . str_pad('', 32, '*')
             . PHP_EOL;
 

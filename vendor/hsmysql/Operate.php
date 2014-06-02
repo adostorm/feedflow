@@ -7,7 +7,7 @@
 
 namespace HsMysql;
 
-final class Op {
+final class Operate {
     const EQ = '=';
     const GT = '>';
     const LT = '<';

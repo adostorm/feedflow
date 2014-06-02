@@ -19,6 +19,10 @@ class InstallTask extends \Phalcon\CLI\Task {
 
     private $connection = null;
 
+    private $dbname = '';
+
+    private $tbname = '';
+
     public function helpAction() {
         $this->_help();
     }
@@ -29,15 +33,42 @@ class InstallTask extends \Phalcon\CLI\Task {
 
     private function _help() {
         $help = array();
-        $help[] = str_pad('', 20, '*').' Command Tips '.str_pad('', 20, '*');
+        $help[] = str_pad('', 25, '*').' Command Tips '.str_pad('', 25, '*');
 
-        $help[] = '- command format: ';
-        $help[] = '  [[create|drop|truncate]:dbname:tbname:offset:limit [...]]';
+        $help[] = '- cli: ';
+        $help[] = '  $ php /{$path}/cli.php Install run';
         $help[] = '';
-        $help[] = '- examples :';
+
+        $help[] = '- expression format: ';
+        $help[] = '  [[create|drop|truncate]:dbname:tbname:offset:limit [ ...]]';
+        $help[] = '';
+
+        $help[] = '- definition :';
+        $help[] = '  +----------------+-------------------------------------------+';
+        $help[] = '  | database       | table                                     |';
+        $help[] = '  +----------------+-------------------------------------------+';
+        $help[] = '  | db_countstate  | feed_index, user_count, user_feed_count   |';
+        $help[] = '  | db_feedcontent | feed_content                              |';
+        $help[] = '  | db_feedstate   | feed_relation                             |';
+        $help[] = '  | db_userfeed    | user_feed                                 |';
+        $help[] = '  | db_userstate   | user_relation                             |';
+        $help[] = '  +----------------+-------------------------------------------+';
+        $help[] = '';
+
+        $help[] = '- fast :';
+        $help[] = ' 1, [cmd]:db_countstate:feed_index:0:0';
+        $help[] = ' 2, [cmd]:db_countstate:user_count:0:30';
+        $help[] = ' 3, [cmd]:db_countstate:user_feed_count:0:30';
+        $help[] = ' 4, [cmd]:db_feedcontent:feed_relation:0:30';
+        $help[] = ' 5, [cmd]:db_userfeed:user_feed:0:30';
+        $help[] = ' 6, [cmd]:db_userstate:user_relation:0:30';
+        $help[] = '';
+
+        $help[] = '- test :';
         $help[] = '  1, create:test:user:0:1';
         $help[] = '  2, create:test:user:0:1 truncate:test:example:0:1';
         $help[] = '';
+
         echo $this->_highlight(implode(PHP_EOL, $help), self::BLUE);
         echo PHP_EOL;
         exit;
@@ -51,8 +82,8 @@ class InstallTask extends \Phalcon\CLI\Task {
         }
 
         echo PHP_EOL;
-        foreach($args as $k=>$arg) {
-            echo $this->_highlight('********** '.($k + 1).' **********', self::BROWN).PHP_EOL;
+        foreach($args as $arg) {
+            echo $this->_highlight('********** EXECUTE# '.$arg.' **********', self::BROWN).PHP_EOL;
 
             $_args = explode(':',$arg);
             if(count($_args) != 5) {
@@ -72,36 +103,57 @@ class InstallTask extends \Phalcon\CLI\Task {
                     echo 'Invalid table : '. $this->_highlight($tbname, self::RED);
                 } else if($offset < -1) {
                     echo 'Invalid offset : '. $this->_highlight($offset, self::RED);
-                } else if($limit < 0 || $limit > 30) {
-                    echo 'Invalid limit : '. $this->_highlight($limit, self::RED). ' The limit is between 0 and 30';
+                } else if($limit < -1 || $limit > 100) {
+                    echo 'Invalid limit : '
+                        . $this->_highlight($limit, self::RED)
+                        . ' is too big, The limit is between '
+                        . $this->_highlight(0, self::GREEN)
+                        . ' and '
+                        . $this->_highlight(100, self::GREEN);
                 } else {
-                    $color = self::BLUE;
+
                     $this->connection = $this->getDI()->getShared('link_'.$dbname);
 
-                    while($limit >= 1) {
+                    $this->dbname = $dbname;
+                    $this->tbname = $tbname;
 
+                    $isSingle = $offset == 0 && $limit == 0;
 
+                    if($isSingle) {
+                        $limit = 1;
+                    }
 
-                        $_tmp_tbname = $tbname . '_' . $offset;
+                    $_indexTbname = $tbname;
 
-                        echo $this->_highlight(sprintf("Now is creating %s.%s", $dbname, $_tmp_tbname), $color);
+                    while($limit > 0) {
 
-                        if($this->_checkTable($_tmp_tbname)) {
-                            echo $this->_showTips1('exists', $color, self::GREEN);
-                            echo PHP_EOL;
-                            continue;
+                        $limit --;
+
+                        if(!$isSingle) {
+                            $_indexTbname = $tbname . '_' . $offset;
+                            $offset ++;
                         }
 
-                        $result = call_user_func_array(array($this, sprintf('_%sTable', $cmd)), array($dbname,$tbname,$offset));
-                        if($result===0) {
-                            echo $this->_showTips1('ok', $color, self::BLUE);
+                        $result = call_user_func_array(
+                            array($this, sprintf('_%sTable', $cmd))
+                            , array($_indexTbname)
+                        );
+
+                        if($result === 0) {
+                            echo $this->_getTipsStatus('ok', self::BLUE, self::BLUE);
+                        } else if($result == -98) {
+                            echo $this->_getTipsStatus('exists', self::BLUE, self::GREEN);
+                            echo PHP_EOL;
+                            continue;
+                        } else if($result == -99) {
+                            echo $this->_getTipsStatus('not exists', self::BLUE, self::GREEN);
+                            echo PHP_EOL;
+                            continue;
                         } else {
-                            echo $this->_showTips1($result, $color, self::RED);
+                            echo $this->_getTipsStatus($result, self::BLUE, self::RED);
                         }
                         echo PHP_EOL;
 
-                        $limit --;
-                        $offset ++;
                     }
                 }
             }
@@ -110,7 +162,15 @@ class InstallTask extends \Phalcon\CLI\Task {
         }
     }
 
-    private function _showTips1($text, $lineColor, $textColor) {
+    private function _getTipsInfo($text, $color1, $color2) {
+        $tmp = array();
+        $tmp[] = $this->_highlight('Now is', $color2);
+        $tmp[] = $this->_highlight($text['cmd'], $color1);
+        $tmp[] = $this->_highlight($this->dbname.'.'.$text['indexTbname'], $color2);
+        return implode(' ', $tmp);
+    }
+
+    private function _getTipsStatus($text, $lineColor, $textColor) {
         $tmp = array();
         $tmp[] = $this->_highlight(str_pad('', 20, '.'), $lineColor);
         $tmp[] = $this->_highlight($text, $textColor);
@@ -118,17 +178,25 @@ class InstallTask extends \Phalcon\CLI\Task {
     }
 
 
-    private function _highlight($text, $num) {
-       return chr(27).'['.$num.'m'.$text.chr(27).'[0m';
+    private function _highlight($text, $color) {
+       return chr(27).'['.$color.'m'.$text.chr(27).'[0m';
     }
 
     private function _checkTable($tbname) {
         return (int) $this->connection->tableExists($tbname);
     }
 
-    private function _createTable($dbname,$tbname,$i) {
+    private function _createTable($indexTbname) {
         try {
-            $sql = sprintf($this->shemas[$dbname][$tbname], $i);
+            echo $this->_getTipsInfo(array(
+                'cmd'=>'creating',
+                'indexTbname'=>$indexTbname,
+            ), self::PURPLE, self::BLUE);
+
+            if($this->_checkTable($indexTbname)) {
+                return -98;
+            }
+            $sql = sprintf($this->shemas[$this->dbname][$this->tbname], $indexTbname);
             $status = $this->connection->execute($sql);
             if($status) { return 0; }
         } catch(PDOException $e) {
@@ -136,18 +204,35 @@ class InstallTask extends \Phalcon\CLI\Task {
         }
     }
 
-    private function _dropTable($dbname,$tbname,$i) {
+    private function _dropTable($indexTbname) {
         try {
-            $status = $this->connection->dropTable($tbname.'_'.$i);
+            echo $this->_getTipsInfo(array(
+                'cmd'=>'dropping',
+                'indexTbname'=>$indexTbname,
+            ), self::PURPLE, self::BLUE);
+
+            if(!$this->_checkTable($indexTbname)) {
+                return -99;
+            }
+            $status = $this->connection->dropTable($indexTbname);
             if($status) { return 0; }
         } catch(PDOException $e) {
             return $e->getMessage();
         }
     }
 
-    private function _truncateTable($dbname,$tbname,$i) {
+    private function _truncateTable($indexTbname) {
         try {
-            $status = $this->connection->execute($tbname.'_'.$i);
+            echo $this->_getTipsInfo(array(
+                'cmd'=>'truncating',
+                'indexTbname'=>$indexTbname,
+            ), self::PURPLE, self::BLUE);
+
+            if(!$this->_checkTable($indexTbname)) {
+                return -99;
+            }
+            $sql = 'truncate '.$indexTbname;
+            $status = $this->connection->execute($sql);
             if($status) { return 0; }
         } catch(PDOException $e) {
             return $e->getMessage();
@@ -157,12 +242,12 @@ class InstallTask extends \Phalcon\CLI\Task {
     private $shemas = array(
         'db_countstate'=>array(
 
-            'feed_index'=>"CREATE TABLE `feed_index` (
+            'feed_index'=>"CREATE TABLE `%s` (
                   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
                   PRIMARY KEY (`id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Feed流水号'",
 
-            'user_count'=>"CREATE TABLE `user_count_%d` (
+            'user_count'=>"CREATE TABLE `%s` (
                   `uid` int(11) unsigned NOT NULL COMMENT '会员ID',
                   `follow_count` mediumint(8) DEFAULT '0' COMMENT '关注数',
                   `fans_count` mediumint(8) DEFAULT '0' COMMENT '粉丝数',
@@ -170,7 +255,7 @@ class InstallTask extends \Phalcon\CLI\Task {
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='会员好友粉丝计数器'
             ",
 
-            'user_feed_count'=>"CREATE TABLE `user_feed_count_%d` (
+            'user_feed_count'=>"CREATE TABLE `%s` (
                   `uid` int(10) unsigned NOT NULL COMMENT '会员ID',
                   `app_id` tinyint(4) NOT NULL COMMENT '应用ID',
                   `feed_count` mediumint(9) DEFAULT '0' COMMENT '动态数',
@@ -182,7 +267,7 @@ class InstallTask extends \Phalcon\CLI\Task {
 
         'db_feedcontent'=>array(
             'feed_content'=>"
-                CREATE TABLE `feed_content_%d` (
+                CREATE TABLE `%s` (
                   `feed_id` int(11) unsigned NOT NULL COMMENT '流水号',
                   `app_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT '应用ID',
                   `source_id` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '来源。1：网站；2：Android；3：IOS；4：IPAD',
@@ -202,7 +287,7 @@ class InstallTask extends \Phalcon\CLI\Task {
 
         'db_feedstate'=>array(
             'feed_relation'=>"
-                CREATE TABLE `feed_relation_%d` (
+                CREATE TABLE `%s` (
                   `app_id` tinyint(4) NOT NULL,
                   `uid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '会员ID',
                   `feed_id` int(11) NOT NULL DEFAULT '0' COMMENT '动态内容ID',
@@ -214,7 +299,7 @@ class InstallTask extends \Phalcon\CLI\Task {
         ),
         'db_userfeed'=>array(
             'user_feed'=>"
-                CREATE TABLE `user_feed_%d` (
+                CREATE TABLE `%s` (
                   `app_id` tinyint(4) DEFAULT NULL COMMENT '应用ID',
                   `uid` int(11) DEFAULT NULL COMMENT '会员ID',
                   `feed_id` int(11) DEFAULT NULL COMMENT 'Feed内容ID',
@@ -226,7 +311,7 @@ class InstallTask extends \Phalcon\CLI\Task {
 
         'db_userstate'=>array(
             'user_relation'=>"
-                CREATE TABLE `user_relation_%d` (
+                CREATE TABLE `%s` (
                   `uid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '会员ID',
                   `friend_uid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '好友会员ID',
                   `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态。0：A关注B；1：A与B相互关注',

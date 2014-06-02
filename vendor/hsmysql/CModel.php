@@ -8,7 +8,8 @@
 namespace HsMysql;
 
 use Util\ReadConfig;
-use HsMysql\Op;
+use HsMysql\Operate;
+use HsMysql\CriteriaCollection;
 
 final class T
 {
@@ -190,7 +191,7 @@ class CModel
         return $cacheConfig[$key];
     }
 
-    public function find($key, $operate = Op::EQ)
+    public function find($key, $operate = Operate::EQ)
     {
         $config = $this->_parseConfig(T::READ);
         $hsModel = $this->_getHsModel($config);
@@ -217,7 +218,7 @@ class CModel
         return $result;
     }
 
-    public function update($key, $data, $operate = Op::EQ)
+    public function update($key, $data, $operate = Operate::EQ)
     {
         $config = $this->_parseConfig(T::WRITE);
         $hsModel = $this->_getHsModel($config);
@@ -233,7 +234,7 @@ class CModel
         return $result;
     }
 
-    public function delete($key, $operate = Op::EQ)
+    public function delete($key, $operate = Operate::EQ)
     {
         $config = $this->_parseConfig(T::WRITE);
         $hsModel = $this->_getHsModel($config);
@@ -268,12 +269,20 @@ class CModel
         return $result;
     }
 
-    public function multiFind($key, $operate=Op::EQ, Filter $filter) {
+    /**
+     * 由于主从分离，这个方法只提供查找, 忽略update, delete, insert的操作
+     * @param CriteriaCollection $criteriaCollection
+     * @return bool
+     */
+    public function multi(CriteriaCollection $criteriaCollection) {
         $config = $this->_parseConfig(T::READ);
         $hsModel = $this->_getHsModel($config);
-        $result = $hsModel->multiFind($key, $operate, $this->_field, $filter);
+        $result = $hsModel->multi($this->_field, $criteriaCollection);
 
-        $this->_info_('', $hsModel, $result);
+        $this->_info_('multi', $hsModel, $result, $criteriaCollection);
+
+        $result = $hsModel->parseMultiAssemble($result, $criteriaCollection->getIsAssemble());
+
         return $result;
     }
 
@@ -301,10 +310,10 @@ class CModel
                     'TABLE NAME:'=>'',
                     'CONNECT ID:'=>'',
                     'CONSTRAINT:'=>'',
+                    'ERROR INFO:'=>'',
+                    'EXECUTE STATUS:'=>'',
                     'EXECUTE SQL:'=>'',
                     'EXECUTE RESULT:'=>'',
-                    'EXECUTE STATUS:'=>'',
-                    'ERROR INFO:'=>'',
                 );
 
                 $mode = $arguments[0];
@@ -345,7 +354,7 @@ class CModel
                         foreach ($data as $k => $v) {
                             $chunks2[] = $k . '=' . $v;
                         }
-                        $_sql = trim(sprintf('UPDATE `%s` SET %s WHERE [INDEX%s%s] %s'
+                        $_sql = trim(sprintf('UPDATE `%s` SET %s WHERE [INDEX %s %s]%s'
                             , $_traces['TABLE NAME:']
                             , trim(implode(' , ', $chunks2), ' , ')
                             , $operate
@@ -358,7 +367,7 @@ class CModel
                     case 'delete':
                         $operate = $arguments[3];
                         $key = $arguments[4];
-                        $_sql = trim(sprintf('DELETE FROM `%s` WHERE [INDEX%s%s] %s'
+                        $_sql = trim(sprintf('DELETE FROM `%s` WHERE [INDEX %s %s]%s'
                             , $_traces['TABLE NAME:']
                             , $operate
                             , $key
@@ -374,19 +383,13 @@ class CModel
                         $in_chunk = $this->_inValues
                             ? ' AND [INDEX] IN (' . implode(',', $this->_inValues) . ')'
                             : '';
-                        $_sql = trim(sprintf('SELECT %s FROM `%s` WHERE [INDEX%s%s] %s %s'
+                        $_sql = trim(sprintf('SELECT %s FROM `%s` WHERE [INDEX %s %s]%s%s'
                             , ($this->_field ? implode(',', $this->_field) : '')
                             , $_traces['TABLE NAME:']
                             , $operate
                             , $key
                             , implode(' AND ', $filterChunks)
                             , trim($in_chunk))).';';
-
-                        if(!$this->_field) {
-                            $_traces['EXECUTE RESULT:'] = "false";
-                            $_traces['EXECUTE STATUS:'] = 'ERROR';
-                            $_traces['ERROR INFO:'] = 'Require a field, eg: SELECT [field1, field2, ...] FROM [table] [where ...];';
-                        }
 
                         $_traces['DATABASE STATUS:'] = 'READABLE @'.$config['status'].'(SELECT)';
                         break;
@@ -401,7 +404,7 @@ class CModel
                             $chunks2[] = $k . '=' . $k . $mode . $v;
                         }
 
-                        $_sql = sprintf('UPDATE `%s` SET %s WHERE [INDEX%s%s] %s;'
+                        $_sql = sprintf('UPDATE `%s` SET %s WHERE [INDEX %s %s]%s;'
                             , $this->_tbname
                             , trim(implode(' , ', $chunks2), ' , ')
                             , '='
@@ -409,6 +412,34 @@ class CModel
                             , trim(implode(' AND ', $filterChunks)));
 
                         $_traces['DATABASE STATUS:'] = 'WRITEABLE @'.$config['status'].'(UPDATE)';
+                        break;
+
+                    case 'multi':
+                        $criteriaCollection =  $arguments[3];
+
+                        foreach($criteriaCollection->toArray() as $k=>$criteria) {
+
+                            $filterChunks = array('');
+                            foreach ($criteria->getFilters() as $filter) {
+                                $filterChunks[] = implode('', $filter);
+                            }
+
+                            $in_chunk = $criteria->getInValues()
+                                ? ' AND [INDEX] IN (' . implode(',', $criteria->getInValues()) . ')'
+                                : '';
+                            $_x_sql = trim(sprintf('SELECT %s FROM `%s` WHERE [INDEX %s %s]%s%s'
+                                    , ($this->_field ? implode(',', $this->_field) : '')
+                                    , $_traces['TABLE NAME:']
+                                    , $criteria->getOperate()
+                                    , $criteria->getKey()
+                                    , implode(' AND ', $filterChunks)
+                                    , trim($in_chunk))).';';
+
+
+                            $_traces['EXECUTE SQL '.$k.':'] = $_x_sql;
+                        }
+
+                        $_traces['DATABASE STATUS:'] = 'READABLE @'.$config['status'].'(SELECT)';
                         break;
                 }
 
@@ -425,14 +456,14 @@ class CModel
         $_log = array();
 
         $_log[] = str_pad('', 31, '*')
-            . 'DEBUG INFORMATION'
+            . ' DEBUG INFORMATION '
             . str_pad('', 32, '*');
 
         if (!$_traces) {
             $_log[] = '- PLEASE OPEN DEBUG MODE';
         } else {
             foreach ($_traces as $desc => $info) {
-                $_log[] = str_pad($desc, 16, ' ', STR_PAD_LEFT) . ' ' . $info;
+                $_log[] = str_pad($desc, 18, ' ', STR_PAD_LEFT) . ' ' . $info;
             }
         }
 
@@ -444,6 +475,10 @@ class CModel
             echo $_logStr;
         } else {
             $filePath = ReadConfig::get('application.path', $this->_DI).'log/'.date('Y-m-d').'.log';
+            $pattern = array(
+                '/'.chr(27).'\[\d+m'.'/'
+            );
+            $_logStr = preg_replace($pattern, '', $_logStr);
             error_log($_logStr, 3, $filePath);
         }
 

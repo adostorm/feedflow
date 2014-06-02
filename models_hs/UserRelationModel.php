@@ -294,21 +294,25 @@ class UserRelationModel extends CommonModel
             $friend_uids = $tmp;
             unset($tmp);
         }
-        $model = $this->getPartitionModel($uid);
 
-        $rets = array();
-        foreach($friend_uids as $_fuid) {
-            $result = $model
-                ->setField('friend_uid,status')
-                ->setFilter(array(
-                    array('friend_uid', '=', $_fuid)
-                ))->find($uid);
-            if($result) {
-                $rets[] = $result[0];
-            }
+        $criteriaCollection = new \HsMysql\CriteriaCollection();
+        $criteriaCollection->setIsAssemble(true);
+
+        foreach($friend_uids as $friend_uid) {
+            $criteria = new \HsMysql\Criteria();
+            $criteria->setOperate('=');
+            $criteria->setKey($uid);
+            $criteria->setFilters(array(
+                array('friend_uid', '=', $friend_uid)
+            ));
+            $criteriaCollection->add($criteria);
         }
 
-        return $rets;
+        $model = $this->getPartitionModel($uid);
+        $results = $model->setField('friend_uid,status')
+            ->multi($criteriaCollection);
+
+        return $results;
     }
 
     /**
